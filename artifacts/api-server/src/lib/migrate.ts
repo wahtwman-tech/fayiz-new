@@ -100,6 +100,7 @@ export async function migrate(): Promise<void> {
         solution_en TEXT NOT NULL DEFAULT '',
         category VARCHAR(255) NOT NULL DEFAULT '',
         technologies TEXT[] NOT NULL DEFAULT '{}',
+        cover_image VARCHAR(1000) NOT NULL DEFAULT '',
         is_featured BOOLEAN NOT NULL DEFAULT FALSE,
         is_published BOOLEAN NOT NULL DEFAULT TRUE,
         sort_order INTEGER NOT NULL DEFAULT 0,
@@ -108,6 +109,17 @@ export async function migrate(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+    `);
+
+    // Add cover_image column if it doesn't exist (for existing databases)
+    await execute(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name = 'projects' AND column_name = 'cover_image') THEN
+          ALTER TABLE projects ADD COLUMN cover_image VARCHAR(1000) NOT NULL DEFAULT '';
+        END IF;
+      END $$;
     `);
 
     await execute(`

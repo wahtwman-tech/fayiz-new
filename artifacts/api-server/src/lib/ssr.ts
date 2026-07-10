@@ -76,12 +76,12 @@ export async function fetchSSRData(): Promise<SSRSettings> {
   // Fetch featured projects
   const projectsRaw = await db.select().from(projectsTable).where(eq(projectsTable.isFeatured, true)).limit(6);
   const featuredProjects = projectsRaw.map((p) => ({
-    id: p.id,
-    titleAr: p.titleAr,
-    titleEn: p.titleEn,
-    slug: String(p.id), // Use ID as slug for now
+    id: Number(p.id),
+    titleAr: p.titleAr || "",
+    titleEn: p.titleEn || "",
+    slug: String(p.id),
     category: p.category || "",
-    coverImage: "",
+    coverImage: (p as Record<string, unknown>).cover_image as string || "",
   }));
 
   // Fetch about sections

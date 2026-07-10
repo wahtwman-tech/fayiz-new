@@ -20,9 +20,17 @@ function renderProjectCard(project, lang, index = 0) {
   const primaryImage = project.images?.find(i => i.isPrimary) || project.images?.[0];
   const techs = (project.technologies || []).slice(0, 5).map(t => `<span class="project-tag">${t}</span>`).join('');
 
-  const mediaHtml = primaryImage
-    ? `<div class="project-card-media"><img src="/uploads/${primaryImage.filename}" alt="${title}" loading="lazy" /></div>`
-    : `<div class="project-placeholder-bg" style="background:${GRAD_PLACEHOLDERS[index % GRAD_PLACEHOLDERS.length]}"><span class="project-placeholder-icon">🖥️</span></div>`;
+  // Priority: 1. coverImage 2. primaryImage from gallery 3. placeholder
+  let mediaHtml;
+  if (project.coverImage) {
+    // Cover image from project settings or external URL
+    const imgSrc = project.coverImage.startsWith('/') ? project.coverImage : project.coverImage;
+    mediaHtml = `<div class="project-card-media"><img src="${imgSrc}" alt="${title}" loading="lazy" /></div>`;
+  } else if (primaryImage) {
+    mediaHtml = `<div class="project-card-media"><img src="/uploads/${primaryImage.filename}" alt="${title}" loading="lazy" /></div>`;
+  } else {
+    mediaHtml = `<div class="project-placeholder-bg" style="background:${GRAD_PLACEHOLDERS[index % GRAD_PLACEHOLDERS.length]}"><span class="project-placeholder-icon">🖥️</span></div>`;
+  }
 
   return `
     <article class="project-card reveal" data-category="${project.category || ''}"

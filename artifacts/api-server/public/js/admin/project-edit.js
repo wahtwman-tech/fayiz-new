@@ -6,6 +6,7 @@ const params = new URLSearchParams(location.search);
 const projectId = params.get('id');
 let technologies = [];
 let currentProject = null;
+let coverImageValue = ''; // Store the final cover image URL
 
 // Tags input
 function renderTags() {
@@ -26,6 +27,64 @@ function addTag(val) {
   if (v && !technologies.includes(v)) {
     technologies.push(v);
     renderTags();
+  }
+}
+
+// Cover Image management
+function updateCoverPreview(src) {
+  const placeholder = document.getElementById('cover-placeholder');
+  const img = document.getElementById('cover-image');
+  if (src) {
+    img.src = src;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+  }
+}
+
+function handleCoverImage(file) {
+  if (!file) return;
+  
+  // Check if it's a local file or external URL
+  if (file instanceof File) {
+    // Local file upload
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target.result;
+      updateCoverPreview(src);
+      // Store as 'local:filename' to indicate local upload
+      coverImageValue = 'local:' + file.name;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // External URL
+    updateCoverPreview(file);
+    coverImageValue = file;
+  }
+}
+
+async function uploadCoverImage(file) {
+  if (!projectId) {
+    // Save the file reference for later
+    coverImageValue = URL.createObjectURL(file);
+    return;
+  }
+  
+  const fd = new FormData();
+  fd.append('image', file);
+  fd.append('isPrimary', 'true');
+  fd.append('isCover', 'true');
+  
+  try {
+    const result = await api.uploadProjectImage(projectId, fd);
+    // Use the uploaded file path
+    coverImageValue = '/uploads/' + result.filename;
+    updateCoverPreview(coverImageValue);
+    toast('تم رفع صورة الغلاف', 'success');
+  } catch (err) {
+    toast('فشل رفع صورة الغلاف', 'error');
   }
 }
 
@@ -50,13 +109,7 @@ async function loadImages() {
 }
 
 async function setPrimary(imageId) {
-  const fd = new FormData();
-  fd.append('isPrimary', 'true');
-  try {
-    // Upload a dummy to set primary? No — we need a PATCH. For now, delete and re-upload isn't ideal.
-    // Instead, mark this image as primary via the existing "re-upload with isPrimary" approach
-    toast('استخدم زر الرفع لتحديد الصورة الرئيسية عند الرفع', 'info');
-  } catch {}
+  toast('استخدم زر الرفع لتحديد الصورة الرئيسية عند الرفع', 'info');
 }
 
 async function deleteImage(imageId) {
@@ -96,6 +149,10 @@ async function saveProject() {
     return;
   }
 
+  // Get cover image value
+  const coverUrlInput = document.getElementById('f-coverImage').value.trim();
+  const coverFinalValue = coverUrlInput || coverImageValue;
+
   const data = {
     titleAr,
     titleEn: document.getElementById('f-titleEn').value.trim(),
@@ -107,6 +164,7 @@ async function saveProject() {
     solutionEn: document.getElementById('f-solutionEn').value.trim(),
     category: document.getElementById('f-category').value.trim(),
     technologies,
+    coverImage: coverFinalValue,
     liveUrl: document.getElementById('f-liveUrl').value.trim(),
     githubUrl: document.getElementById('f-githubUrl').value.trim(),
     isPublished: getToggleValue(document.getElementById('toggle-published')),
@@ -124,7 +182,6 @@ async function saveProject() {
     } else {
       const created = await api.createProject(data);
       toast('تم إنشاء المشروع بنجاح', 'success');
-      // Redirect to edit page with id to allow image upload
       setTimeout(() => location.href = `/admin/project-edit.html?id=${created.id}`, 1000);
     }
   } catch (err) {
@@ -154,6 +211,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Init toggles
   initToggle(document.getElementById('toggle-published'), true);
   initToggle(document.getElementById('toggle-featured'), false);
+
+  // Cover image upload from device
+  const coverUploadBtn = document.getElementById('cover-upload-btn');
+  const coverFileInput = document.getElementById('cover-file-input');
+  if (coverUploadBtn && coverFileInput) {
+    coverUploadBtn.addEventListener('click', () => coverFileInput.click());
+    coverFileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        handleCoverImage(e.target.files[0]);
+        uploadCoverImage(e.target.files[0]);
+      }
+    });
+  }
+
+  // Cover image URL input
+  const coverUrlInput = document.getElementById('f-coverImage');
+  coverUrlInput.addEventListener('input', (e) => {
+    const url = e.target.value.trim();
+    if (url) {
+      coverImageValue = url;
+      updateCoverPreview(url);
+    } else {
+      coverImageValue = '';
+      updateCoverPreview('');
+    }
+  });
 
   // Image upload zone
   const zone = document.getElementById('upload-zone');
@@ -195,6 +278,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       technologies = project.technologies || [];
       renderTags();
+
+      // Load cover image
+      if (project.coverImage) {
+        coverImageValue = project.coverImage;
+        document.getElementById('f-coverImage').value = project.coverImage;
+        updateCoverPreview(project.coverImage);
+      }
 
       initToggle(document.getElementById('toggle-published'), project.isPublished);
       initToggle(document.getElementById('toggle-featured'), project.isFeatured);
