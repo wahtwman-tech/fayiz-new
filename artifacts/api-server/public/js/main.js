@@ -64,11 +64,32 @@ async function initNavbar() {
   const lang = getLang();
   const settings = window._settings || {};
 
-  // Logo text
+  // Logo - use image if available, otherwise text
   const logoText = document.getElementById('nav-logo-text');
-  if (logoText) logoText.textContent = lang === 'ar' ? (settings.logo_text_ar || 'م.ح') : (settings.logo_text_en || 'MH');
   const drawerLogo = document.getElementById('drawer-logo');
-  if (drawerLogo) drawerLogo.textContent = lang === 'ar' ? (settings.logo_text_ar || 'م.ح') : (settings.logo_text_en || 'MH');
+  const footerLogoImg = document.getElementById('footer-logo-img');
+  const footerLogoText = document.getElementById('footer-logo-text');
+  const logoFallback = lang === 'ar' ? (settings.logo_text_ar || 'م.ح') : (settings.logo_text_en || 'MH');
+  
+  if (settings.logo_image) {
+    if (logoText) {
+      logoText.outerHTML = `<img src="${settings.logo_image}" alt="${logoFallback}" class="logo-img" id="nav-logo-text" />`;
+    }
+    if (drawerLogo) {
+      drawerLogo.outerHTML = `<img src="${settings.logo_image}" alt="${logoFallback}" class="logo-img" id="drawer-logo" />`;
+    }
+    if (footerLogoImg) {
+      footerLogoImg.src = settings.logo_image;
+      footerLogoImg.style.display = 'block';
+    }
+    if (footerLogoText) {
+      footerLogoText.style.display = 'none';
+    }
+  } else {
+    if (logoText) logoText.textContent = logoFallback;
+    if (drawerLogo) drawerLogo.textContent = logoFallback;
+    if (footerLogoText) footerLogoText.textContent = logoFallback;
+  }
 
   // Nav items
   let navItems = [];

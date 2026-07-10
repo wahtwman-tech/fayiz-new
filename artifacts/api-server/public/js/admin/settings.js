@@ -10,8 +10,9 @@ const SETTING_GROUPS = [
       { key: 'site_title_en', label: 'عنوان الموقع (إنجليزي)', type: 'text' },
       { key: 'site_description_ar', label: 'وصف الموقع (عربي)', type: 'textarea' },
       { key: 'site_description_en', label: 'وصف الموقع (إنجليزي)', type: 'textarea' },
-      { key: 'logo_text_ar', label: 'نص الشعار (عربي)', type: 'text' },
-      { key: 'logo_text_en', label: 'نص الشعار (إنجليزي)', type: 'text' },
+      { key: 'logo_image', label: 'رابط صورة اللوجو', type: 'text', placeholder: 'https://example.com/logo.png' },
+      { key: 'logo_text_ar', label: 'نص الشعار (عربي) - للبديل', type: 'text' },
+      { key: 'logo_text_en', label: 'نص الشعار (إنجليزي) - للبديل', type: 'text' },
     ],
   },
   {

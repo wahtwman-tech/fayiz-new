@@ -232,6 +232,21 @@ h1, h2, h3, h4 {
   flex-shrink: 0;
 }
 
+.logo-img {
+  height: 38px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.footer-logo-img {
+  height: 48px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
 .nav-links {
   display: flex;
   align-items: center;
