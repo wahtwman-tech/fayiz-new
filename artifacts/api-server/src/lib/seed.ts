@@ -15,32 +15,31 @@ export async function seedIfEmpty(): Promise<void> {
 
   logger.info("Seeding initial data...");
 
-  // Admin user
+  // Admin user - فايز محمد
   const hash = await bcrypt.hash("admin123", 12);
   await db.insert(adminUsersTable).values({ username: "admin", passwordHash: hash });
 
   // Site settings
   const defaultSettings = [
-    { key: "site_title_ar", value: "محمد الحسيني | مطور ويب" },
-    { key: "site_title_en", value: "Mohammed Al-Husseini | Web Developer" },
-    { key: "site_description_ar", value: "مطور ويب محترف متخصص في بناء حلول رقمية متكاملة" },
-    { key: "site_description_en", value: "Professional web developer specializing in complete digital solutions" },
-    { key: "hero_name_ar", value: "محمد الحسيني" },
-    { key: "hero_name_en", value: "Mohammed Al-Husseini" },
-    { key: "hero_title_ar", value: "مطور ويب متكامل" },
-    { key: "hero_title_en", value: "Full-Stack Web Developer" },
-    { key: "hero_intro_ar", value: "أبني حلولاً رقمية متكاملة، لا مجرد صفحات ويب. أجمع بين الكود النظيف والأداء العالي لأقدم تجارب استثنائية." },
-    { key: "hero_intro_en", value: "I build complete digital solutions, not just web pages. Combining clean code with high performance to deliver exceptional experiences." },
-    { key: "contact_email", value: "contact@example.com" },
-    { key: "contact_whatsapp", value: "+966500000000" },
-    { key: "contact_phone", value: "+966500000000" },
-    { key: "social_github", value: "https://github.com" },
-    { key: "social_linkedin", value: "https://linkedin.com" },
-    { key: "social_twitter", value: "https://twitter.com" },
-    { key: "logo_text_ar", value: "م.ح" },
-    { key: "logo_text_en", value: "MH" },
-    { key: "footer_text_ar", value: "جميع الحقوق محفوظة" },
-    { key: "footer_text_en", value: "All rights reserved" },
+    { key: "site_title_ar", value: "فايز محمد | مطور ويب" },
+    { key: "site_title_en", value: "Fayiz Mohammed | Web Developer" },
+    { key: "site_description_ar", value: "أبني مواقع إلكترونية من الصفر. البرمجة شغفي وهوايتي المفضلة." },
+    { key: "site_description_en", value: "I build websites from scratch. Programming is my passion and favorite hobby." },
+    { key: "hero_name_ar", value: "فايز محمد" },
+    { key: "hero_name_en", value: "Fayiz Mohammed" },
+    { key: "hero_title_ar", value: "مطور ويب" },
+    { key: "hero_title_en", value: "Web Developer" },
+    { key: "hero_intro_ar", value: "أبني مواقع إلكترونية من الصفر. أستمتع بإنشاء حلول رقمية متكاملة. البرمجة بالنسبة لي أكثر من عمل، إنها شغفي وإحدى هواياتي المفضلة." },
+    { key: "hero_intro_en", value: "I build websites from scratch. I enjoy creating complete digital solutions. For me, programming is more than work - it's my passion and one of my favorite hobbies." },
+    { key: "contact_email", value: "fayiz.abualaileh1k@gmail.com" },
+    { key: "contact_whatsapp", value: "+962780777050" },
+    { key: "contact_telegram", value: "+962780777050" },
+    { key: "contact_facebook", value: "Fayiz Abualaileh" },
+    { key: "contact_phone", value: "+962780777050" },
+    { key: "logo_text_ar", value: "ف" },
+    { key: "logo_text_en", value: "F" },
+    { key: "footer_text_ar", value: "جميع الحقوق محفوظة © فايز محمد" },
+    { key: "footer_text_en", value: "All rights reserved © Fayiz Mohammed" },
     { key: "default_lang", value: "ar" },
   ];
   await db.insert(siteSettingsTable).values(defaultSettings);
@@ -49,30 +48,28 @@ export async function seedIfEmpty(): Promise<void> {
   await db.insert(navItemsTable).values([
     { labelAr: "الرئيسية", labelEn: "Home", url: "/", sortOrder: 1 },
     { labelAr: "من أنا", labelEn: "About", url: "/about.html", sortOrder: 2 },
-    { labelAr: "خدماتي", labelEn: "Services", url: "/services.html", sortOrder: 3 },
-    { labelAr: "أعمالي", labelEn: "Portfolio", url: "/portfolio.html", sortOrder: 4 },
-    { labelAr: "تواصل معي", labelEn: "Contact", url: "/contact.html", sortOrder: 5 },
+    { labelAr: "أعمالي", labelEn: "Portfolio", url: "/portfolio.html", sortOrder: 3 },
+    { labelAr: "تواصل معي", labelEn: "Contact", url: "/contact.html", sortOrder: 4 },
   ]);
 
   // Services
   await db.insert(servicesTable).values([
-    { titleAr: "تطوير المواقع", titleEn: "Website Development", descriptionAr: "تصميم وتطوير مواقع ويب احترافية بأحدث التقنيات", descriptionEn: "Design and develop professional websites using the latest technologies", icon: "globe", sortOrder: 1 },
-    { titleAr: "حلول ويب مخصصة", titleEn: "Custom Web Solutions", descriptionAr: "بناء تطبيقات وأنظمة ويب مخصصة حسب احتياجاتك", descriptionEn: "Build custom web applications and systems tailored to your needs", icon: "settings", sortOrder: 2 },
-    { titleAr: "مواقع الأعمال", titleEn: "Business Websites", descriptionAr: "مواقع احترافية تعكس هوية شركتك وتجذب العملاء", descriptionEn: "Professional websites that reflect your company identity and attract clients", icon: "briefcase", sortOrder: 3 },
-    { titleAr: "متاجر إلكترونية", titleEn: "E-commerce Websites", descriptionAr: "متاجر إلكترونية متكاملة مع نظام إدارة المنتجات والطلبات", descriptionEn: "Full-featured online stores with product and order management", icon: "shopping-cart", sortOrder: 4 },
-    { titleAr: "لوحات التحكم والإدارة", titleEn: "Dashboard & Management Systems", descriptionAr: "أنظمة إدارة متكاملة للتحكم في بيانات أعمالك", descriptionEn: "Comprehensive management systems to control your business data", icon: "layout-dashboard", sortOrder: 5 },
-    { titleAr: "الاستضافة والدعم التقني", titleEn: "Hosting & Technical Support", descriptionAr: "استضافة موقعك ودعم تقني مستمر لضمان الأداء المثالي", descriptionEn: "Website hosting and continuous technical support for optimal performance", icon: "server", sortOrder: 6 },
+    { titleAr: "بناء المواقع من الصفر", titleEn: "Build Websites from Scratch", descriptionAr: "أبني مواقع إلكترونية متكاملة من التصميم حتى التسليم، بأكواد نظيفة ومنظمة.", descriptionEn: "I build complete websites from design to delivery, with clean and organized code.", icon: "code", sortOrder: 1 },
+    { titleAr: "حلول رقمية مخصصة", titleEn: "Custom Digital Solutions", descriptionAr: "أحول أفكارك إلى مواقع وتطبيقات ويب حقيقية تعمل بالضبط كما تتخيل.", descriptionEn: "I turn your ideas into real websites and web applications that work exactly as you imagine.", icon: "zap", sortOrder: 2 },
+    { titleAr: "مواقع سهلة الإدارة", titleEn: "Easy-to-Manage Websites", descriptionAr: "أنشئ لك لوحة تحكم تمكنك من تعديل موقعك بنفسك دون الحاجة لمعرفة برمجية.", descriptionEn: "I create an admin panel that lets you edit your website yourself without needing programming knowledge.", icon: "settings", sortOrder: 3 },
+    { titleAr: "أداء عالٍ", titleEn: "High Performance", descriptionAr: "أهتم بسرعة تحميل موقعك وأدائه لضمان أفضل تجربة للمستخدمين.", descriptionEn: "I care about your website's loading speed and performance to ensure the best user experience.", icon: "rocket", sortOrder: 4 },
   ]);
 
   // Home sections
   await db.insert(sectionsTable).values([
-    { pageKey: "home", sectionKey: "about_brief_ar", contentAr: "أنا مطور ويب متكامل شغوف بالكود النظيف والأداء العالي. أؤمن بأن كل موقع يجب أن يكون تجربة لا مجرد صفحة.", contentEn: "", sortOrder: 1 },
-    { pageKey: "home", sectionKey: "about_brief_en", contentAr: "", contentEn: "I am a full-stack web developer passionate about clean code and high performance. I believe every website should be an experience, not just a page.", sortOrder: 2 },
-    { pageKey: "about", sectionKey: "bio_ar", contentAr: "أنا مطور ويب متكامل مع خبرة تمتد لسنوات في بناء حلول رقمية متكاملة. شغفي هو تحويل الأفكار إلى تجارب رقمية استثنائية تخدم العملاء وتحقق أهدافهم التجارية.", contentEn: "", sortOrder: 1 },
-    { pageKey: "about", sectionKey: "bio_en", contentAr: "", contentEn: "I am a full-stack web developer with years of experience building complete digital solutions. My passion is transforming ideas into exceptional digital experiences that serve clients and achieve their business goals.", sortOrder: 2 },
-    { pageKey: "about", sectionKey: "skills", contentAr: "HTML, CSS, JavaScript, TypeScript, React, Node.js, Express, PostgreSQL, MongoDB, Git", contentEn: "HTML, CSS, JavaScript, TypeScript, React, Node.js, Express, PostgreSQL, MongoDB, Git", sortOrder: 3 },
-    { pageKey: "contact", sectionKey: "intro_ar", contentAr: "هل لديك مشروع في ذهنك؟ تواصل معي وسنبني شيئاً استثنائياً معاً.", contentEn: "", sortOrder: 1 },
-    { pageKey: "contact", sectionKey: "intro_en", contentAr: "", contentEn: "Have a project in mind? Get in touch and we'll build something exceptional together.", sortOrder: 2 },
+    { pageKey: "home", sectionKey: "about_brief_ar", contentAr: "أبني مواقع إلكترونية من الصفر. البرمجة بالنسبة لي أكثر من مجرد عمل، إنها شغفي وإحدى هواياتي المفضلة. أهتم بالكود النظيف والتنظيم والأداء العالي.", contentEn: "", sortOrder: 1 },
+    { pageKey: "home", sectionKey: "about_brief_en", contentAr: "", contentEn: "I build websites from scratch. For me, programming is more than just work - it's my passion and one of my favorite hobbies. I care about clean code, organization, and high performance.", sortOrder: 2 },
+    { pageKey: "about", sectionKey: "bio_ar", contentAr: "أنا فايز محمد، مطور ويب محترف. أؤمن بأنه عندما أبني موقعاً، العميل يجب أن يمتلكه بالكامل. لا أحب أن يشعر العميل بالتبعية للمطور لإجراء كل تغيير صغير. لذلك أبني مواقع سهلة الإدارة.", contentEn: "", sortOrder: 1 },
+    { pageKey: "about", sectionKey: "bio_en", contentAr: "", contentEn: "I'm Fayiz Mohammed, a professional web developer. I believe when I build a website, the client should fully own it. I don't like clients feeling dependent on the developer for every small change. That's why I build easy-to-manage websites.", sortOrder: 2 },
+    { pageKey: "about", sectionKey: "approach_ar", contentAr: "أفضل التواصل الصادق والمباشر مع العملاء. لا أحب المبالغة أو لغة التسويق غير الواقعية. أريد أن يشعر زوار موقعي بأنهم يتعاملون مع مطور حقيقي يستمتع حقاً ببناء المواقع الإلكترونية.", contentEn: "", sortOrder: 3 },
+    { pageKey: "about", sectionKey: "approach_en", contentAr: "", contentEn: "I prefer honest and direct communication with clients. I don't like exaggeration or unrealistic marketing language. I want visitors to my site to feel like they're dealing with a real developer who truly enjoys building websites.", sortOrder: 4 },
+    { pageKey: "contact", sectionKey: "intro_ar", contentAr: "هل لديك فكرة أو مشروع في ذهنك؟ تواصل معي مباشرة ونناقش كيف أقدر أساعدك.", contentEn: "", sortOrder: 1 },
+    { pageKey: "contact", sectionKey: "intro_en", contentAr: "", contentEn: "Do you have an idea or project in mind? Get in touch directly and let's discuss how I can help you.", sortOrder: 2 },
   ]);
 
   logger.info("Seeding complete. Admin: admin / admin123");

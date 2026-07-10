@@ -58,13 +58,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Social
   const socialEl = document.getElementById('contact-social');
   const socials = [
-    { key: 'social_github', icon: svgIcon('github') },
-    { key: 'social_linkedin', icon: svgIcon('linkedin') },
-    { key: 'social_twitter', icon: svgIcon('twitter') },
+    { key: 'contact_whatsapp', icon: svgIcon('whatsapp') },
+    { key: 'contact_telegram', icon: svgIcon('telegram') },
+    { key: 'contact_facebook', icon: svgIcon('facebook') },
+    { key: 'contact_email', icon: svgIcon('email') },
   ];
   socialEl.innerHTML = socials
     .filter(s => settings[s.key])
-    .map(s => `<a href="${settings[s.key]}" target="_blank" rel="noopener" class="social-btn">${s.icon}</a>`)
+    .map(s => {
+      const value = settings[s.key];
+      let href = value;
+      if (s.key === 'contact_whatsapp') href = `https://wa.me/${value.replace(/\D/g, '')}`;
+      else if (s.key === 'contact_telegram') href = `https://t.me/${value.replace(/\D/g, '')}`;
+      else if (s.key === 'contact_facebook') href = `https://fb.com/${value}`;
+      else if (s.key === 'contact_email') href = `mailto:${value}`;
+      return `<a href="${href}" target="_blank" rel="noopener" class="social-btn">${s.icon}</a>`;
+    })
     .join('');
 
   // Form submission
