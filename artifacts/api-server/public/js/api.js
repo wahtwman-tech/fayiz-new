@@ -101,6 +101,14 @@ const api = {
       body: formData,
     }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(new Error(e.error))));
   },
+  uploadProjectCoverImage: (projectId, formData) => {
+    const token = localStorage.getItem('cms_token');
+    return fetch(API_BASE + '/projects/' + projectId + '/cover', {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData,
+    }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(new Error(e.error))));
+  },
   deleteProjectImage: (projectId, imageId) => apiFetch('/projects/' + projectId + '/images/' + imageId, { method: 'DELETE' }),
   sendContact: (d) => apiFetch('/contact', { method: 'POST', body: JSON.stringify(d) }),
 };

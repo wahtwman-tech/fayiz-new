@@ -74,13 +74,11 @@ async function uploadCoverImage(file) {
   
   const fd = new FormData();
   fd.append('image', file);
-  fd.append('isPrimary', 'true');
-  fd.append('isCover', 'true');
   
   try {
-    const result = await api.uploadProjectImage(projectId, fd);
-    // Use the uploaded file path
-    coverImageValue = '/uploads/' + result.filename;
+    const result = await api.uploadProjectCoverImage(projectId, fd);
+    // Use the Base64 data URL
+    coverImageValue = result.coverImageData;
     updateCoverPreview(coverImageValue);
     toast('تم رفع صورة الغلاف', 'success');
   } catch (err) {

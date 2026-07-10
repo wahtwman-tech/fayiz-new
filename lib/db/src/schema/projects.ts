@@ -15,6 +15,7 @@ export const projectsTable = pgTable("projects", {
   category: text("category").notNull().default(""),
   technologies: text("technologies").array().notNull().default([]),
   coverImage: text("cover_image").notNull().default(""),
+  coverImageData: text("cover_image_data"),
   isFeatured: boolean("is_featured").notNull().default(false),
   isPublished: boolean("is_published").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),

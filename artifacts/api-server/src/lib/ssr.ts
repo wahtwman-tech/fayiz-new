@@ -82,6 +82,7 @@ export async function fetchSSRData(): Promise<SSRSettings> {
     slug: String(p.id),
     category: p.category || "",
     coverImage: p.coverImage || "",
+    coverImageData: (p as Record<string, unknown>).cover_image_data as string | null || null,
   }));
 
   // Fetch about sections

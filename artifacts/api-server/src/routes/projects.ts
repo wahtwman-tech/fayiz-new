@@ -87,6 +87,38 @@ router.put("/projects/:id", requireAuth, async (req, res): Promise<void> => {
   res.json(project);
 });
 
+// Upload cover image as Base64
+router.post("/projects/:id/cover", requireAuth, upload.single("image"), async (req, res): Promise<void> => {
+  const raw = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
+  const projectId = parseInt(raw, 10);
+
+  if (!req.file) {
+    res.status(400).json({ error: "No image file provided" });
+    return;
+  }
+
+  // Read file and convert to Base64
+  const fs = require("fs");
+  const fileBuffer = fs.readFileSync(req.file.path);
+  const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString("base64")}`;
+
+  // Delete temp file
+  fs.unlinkSync(req.file.path);
+
+  // Update project with Base64 image data
+  const [project] = await db.update(projectsTable)
+    .set({ coverImageData: base64Image, coverImage: "" })
+    .where(eq(projectsTable.id, projectId))
+    .returning();
+
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+
+  res.json({ success: true, coverImageData: project.coverImageData });
+});
+
 router.delete("/projects/:id", requireAuth, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params["id"]) ? req.params["id"][0] : req.params["id"];
   const id = parseInt(raw, 10);
