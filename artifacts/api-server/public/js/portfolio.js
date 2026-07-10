@@ -18,7 +18,7 @@ function renderProjectCard(project, lang, index = 0) {
   const title = lang === 'ar' ? project.titleAr : (project.titleEn || project.titleAr);
   const desc  = lang === 'ar' ? project.descriptionAr : (project.descriptionEn || project.descriptionAr);
   const primaryImage = project.images?.find(i => i.isPrimary) || project.images?.[0];
-  const techs = (project.technologies || []).slice(0, 5).map(t => `<span class="project-tag">${t}</span>`).join('');
+  const techs = (project.technologies || []).slice(0, 5).map(t => `<span class="project-tag">${t}</span>`).join(' ');
 
   // Priority: 1. coverImageData (Base64) 2. coverImage (URL) 3. primaryImage 4. placeholder
   let mediaHtml;
