@@ -1,0 +1,9 @@
+{
+  "$schema": "https://railway.app/railpack-plan.schema.json",
+  "build": {
+    "command": "pnpm install --no-frozen-lockfile"
+  },
+  "start": {
+    "command": "pnpm run start"
+  }
+}
