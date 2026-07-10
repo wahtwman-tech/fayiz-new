@@ -1,8 +1,14 @@
 /**
  * API Client — shared across all pages
+ * Uses SSR data when available (window.__SSR_DATA__), falls back to API
  */
 
 const API_BASE = '/api';
+
+// Get SSR data if available
+function getSSRData() {
+  return window.__SSR_DATA__ || null;
+}
 
 async function apiFetch(path, options = {}) {
   const token = localStorage.getItem('cms_token');
@@ -28,59 +34,76 @@ async function apiFetch(path, options = {}) {
 }
 
 const api = {
-  // Settings
-  getSettings: ()              => apiFetch('/settings'),
-  updateSettings: (data)       => apiFetch('/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  // Settings - use SSR data if available
+  getSettings: () => {
+    const ssr = getSSRData();
+    if (ssr && ssr.settings) {
+      return Promise.resolve(ssr.settings);
+    }
+    return apiFetch('/settings');
+  },
 
-  // Auth
-  login: (username, password)  => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
-  me: ()                       => apiFetch('/auth/me'),
-  changePassword: (d)          => apiFetch('/auth/change-password', { method: 'POST', body: JSON.stringify(d) }),
+  // Nav - use SSR data if available
+  getNav: () => {
+    const ssr = getSSRData();
+    if (ssr && ssr.nav) {
+      return Promise.resolve(ssr.nav);
+    }
+    return apiFetch('/nav');
+  },
 
-  // Nav
-  getNav: ()                   => apiFetch('/nav'),
-  createNav: (d)               => apiFetch('/nav', { method: 'POST', body: JSON.stringify(d) }),
-  updateNav: (id, d)           => apiFetch(`/nav/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
-  deleteNav: (id)              => apiFetch(`/nav/${id}`, { method: 'DELETE' }),
+  // Services - use SSR data if available
+  getServices: () => {
+    const ssr = getSSRData();
+    if (ssr && ssr.services) {
+      return Promise.resolve(ssr.services);
+    }
+    return apiFetch('/services');
+  },
 
-  // Pages
-  getPages: ()                 => apiFetch('/pages'),
-  getPage: (slug)              => apiFetch(`/pages/${slug}`),
-  createPage: (d)              => apiFetch('/pages', { method: 'POST', body: JSON.stringify(d) }),
-  updatePage: (id, d)          => apiFetch(`/pages/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
-  deletePage: (id)             => apiFetch(`/pages/${id}`, { method: 'DELETE' }),
+  // Projects - use SSR data for featured only
+  getProjects: (featured) => {
+    const ssr = getSSRData();
+    if (featured && ssr && ssr.featuredProjects) {
+      return Promise.resolve(ssr.featuredProjects);
+    }
+    return apiFetch('/projects' + (featured ? '?featured=true' : ''));
+  },
 
-  // Sections
-  getSections: (pageKey)       => apiFetch(`/sections${pageKey ? `?pageKey=${pageKey}` : ''}`),
-  updateSection: (id, d)       => apiFetch(`/sections/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
-  createSection: (d)           => apiFetch('/sections', { method: 'POST', body: JSON.stringify(d) }),
-
-  // Services
-  getServices: ()              => apiFetch('/services'),
-  createService: (d)           => apiFetch('/services', { method: 'POST', body: JSON.stringify(d) }),
-  updateService: (id, d)       => apiFetch(`/services/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
-  deleteService: (id)          => apiFetch(`/services/${id}`, { method: 'DELETE' }),
-
-  // Projects
-  getProjects: (featured)      => apiFetch(`/projects${featured ? '?featured=true' : ''}`),
-  getProject: (id)             => apiFetch(`/projects/${id}`),
-  createProject: (d)           => apiFetch('/projects', { method: 'POST', body: JSON.stringify(d) }),
-  updateProject: (id, d)       => apiFetch(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
-  deleteProject: (id)          => apiFetch(`/projects/${id}`, { method: 'DELETE' }),
-
-  // Project images — uses FormData
+  // Other methods always use API
+  updateSettings: (data) => apiFetch('/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  login: (username, password) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  me: () => apiFetch('/auth/me'),
+  changePassword: (d) => apiFetch('/auth/change-password', { method: 'POST', body: JSON.stringify(d) }),
+  createNav: (d) => apiFetch('/nav', { method: 'POST', body: JSON.stringify(d) }),
+  updateNav: (id, d) => apiFetch('/nav/' + id, { method: 'PUT', body: JSON.stringify(d) }),
+  deleteNav: (id) => apiFetch('/nav/' + id, { method: 'DELETE' }),
+  getPages: () => apiFetch('/pages'),
+  getPage: (slug) => apiFetch('/pages/' + slug),
+  createPage: (d) => apiFetch('/pages', { method: 'POST', body: JSON.stringify(d) }),
+  updatePage: (id, d) => apiFetch('/pages/' + id, { method: 'PUT', body: JSON.stringify(d) }),
+  deletePage: (id) => apiFetch('/pages/' + id, { method: 'DELETE' }),
+  getSections: (pageKey) => apiFetch('/sections' + (pageKey ? '?pageKey=' + pageKey : '')),
+  updateSection: (id, d) => apiFetch('/sections/' + id, { method: 'PUT', body: JSON.stringify(d) }),
+  createSection: (d) => apiFetch('/sections', { method: 'POST', body: JSON.stringify(d) }),
+  createService: (d) => apiFetch('/services', { method: 'POST', body: JSON.stringify(d) }),
+  updateService: (id, d) => apiFetch('/services/' + id, { method: 'PUT', body: JSON.stringify(d) }),
+  deleteService: (id) => apiFetch('/services/' + id, { method: 'DELETE' }),
+  getProject: (id) => apiFetch('/projects/' + id),
+  createProject: (d) => apiFetch('/projects', { method: 'POST', body: JSON.stringify(d) }),
+  updateProject: (id, d) => apiFetch('/projects/' + id, { method: 'PUT', body: JSON.stringify(d) }),
+  deleteProject: (id) => apiFetch('/projects/' + id, { method: 'DELETE' }),
   uploadProjectImage: (projectId, formData) => {
     const token = localStorage.getItem('cms_token');
-    return fetch(`${API_BASE}/projects/${projectId}/images`, {
+    return fetch(API_BASE + '/projects/' + projectId + '/images', {
       method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
       body: formData,
     }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(new Error(e.error))));
   },
-  deleteProjectImage: (projectId, imageId) => apiFetch(`/projects/${projectId}/images/${imageId}`, { method: 'DELETE' }),
-
-  // Contact
-  sendContact: (d)             => apiFetch('/contact', { method: 'POST', body: JSON.stringify(d) }),
+  deleteProjectImage: (projectId, imageId) => apiFetch('/projects/' + projectId + '/images/' + imageId, { method: 'DELETE' }),
+  sendContact: (d) => apiFetch('/contact', { method: 'POST', body: JSON.stringify(d) }),
 };
 
 window.api = api;
+window.getSSRData = getSSRData;

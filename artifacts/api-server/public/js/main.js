@@ -199,13 +199,20 @@ window.initScrollProgress = initScrollProgress;
 
 // ── Bootstrap ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    window._settings = await api.getSettings();
-    const siteTitle = getLang() === 'ar' ? window._settings.site_title_ar : window._settings.site_title_en;
-    if (siteTitle) document.title = siteTitle;
-  } catch {
-    window._settings = {};
+  // Use SSR data if available (no flash)
+  if (window.__SSR_DATA__ && window.__SSR_DATA__.settings) {
+    window._settings = window.__SSR_DATA__.settings;
+  } else {
+    // Fallback to API fetch (may cause flash on slow connections)
+    try {
+      window._settings = await api.getSettings();
+    } catch {
+      window._settings = {};
+    }
   }
+
+  const siteTitle = getLang() === 'ar' ? window._settings.site_title_ar : window._settings.site_title_en;
+  if (siteTitle) document.title = siteTitle;
 
   applyLang(getLang());
   await initNavbar();
