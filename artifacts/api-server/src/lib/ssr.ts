@@ -81,7 +81,7 @@ export async function fetchSSRData(): Promise<SSRSettings> {
     titleEn: p.titleEn || "",
     slug: String(p.id),
     category: p.category || "",
-    coverImage: (p as Record<string, unknown>).cover_image as string || "",
+    coverImage: p.coverImage || "",
   }));
 
   // Fetch about sections
