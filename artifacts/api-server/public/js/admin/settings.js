@@ -10,7 +10,6 @@ const SETTING_GROUPS = [
       { key: 'site_title_en', label: 'عنوان الموقع (إنجليزي)', type: 'text' },
       { key: 'site_description_ar', label: 'وصف الموقع (عربي)', type: 'textarea' },
       { key: 'site_description_en', label: 'وصف الموقع (إنجليزي)', type: 'textarea' },
-      { key: 'logo_image', label: 'رابط صورة اللوجو', type: 'text', placeholder: 'https://example.com/logo.png' },
       { key: 'logo_text_ar', label: 'نص الشعار (عربي) - للبديل', type: 'text' },
       { key: 'logo_text_en', label: 'نص الشعار (إنجليزي) - للبديل', type: 'text' },
     ],
@@ -55,7 +54,35 @@ let currentSettings = {};
 
 function renderSettings(settings) {
   const content = document.getElementById('settings-content');
-  content.innerHTML = SETTING_GROUPS.map(group => `
+  
+  // Logo upload section
+  const logoSection = `
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-header"><div class="panel-title">صورة الشعار</div></div>
+      <div class="panel-body">
+        <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+          <div style="width:120px;height:120px;border:2px dashed var(--border);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);overflow:hidden;" id="logo-preview">
+            ${settings.logo_image && settings.logo_image.startsWith('data:') 
+              ? `<img src="${settings.logo_image}" style="max-width:100%;max-height:100%;object-fit:contain;" />` 
+              : settings.logo_image 
+                ? `<img src="${settings.logo_image}" style="max-width:100%;max-height:100%;object-fit:contain;" />`
+                : '<span style="color:var(--text-muted);font-size:0.8rem;">لم يتم رفع شعار</span>'
+            }
+          </div>
+          <div>
+            <input type="file" id="logo-file-input" accept="image/*" style="display:none;" />
+            <button type="button" class="btn btn--outline" id="logo-upload-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              رفع شعار جديد
+            </button>
+            <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px;">PNG, JPG, WebP - حجم أقصى 2MB</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  content.innerHTML = logoSection + SETTING_GROUPS.map(group => `
     <div class="panel" style="margin-bottom:24px;">
       <div class="panel-header"><div class="panel-title">${group.title}</div></div>
       <div class="panel-body">
@@ -132,6 +159,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSettings(currentSettings);
   } catch {
     toast('فشل تحميل الإعدادات', 'error');
+  }
+
+  // Logo upload
+  const logoUploadBtn = document.getElementById('logo-upload-btn');
+  const logoFileInput = document.getElementById('logo-file-input');
+  const logoPreview = document.getElementById('logo-preview');
+  
+  if (logoUploadBtn && logoFileInput) {
+    logoUploadBtn.addEventListener('click', () => logoFileInput.click());
+    logoFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        await api.uploadLogo(file);
+        // Update preview
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          logoPreview.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:100%;object-fit:contain;" />`;
+        };
+        reader.readAsDataURL(file);
+        toast('تم رفع الشعار بنجاح', 'success');
+      } catch (err) {
+        toast(err.message || 'فشل رفع الشعار', 'error');
+      }
+    });
   }
 
   document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
