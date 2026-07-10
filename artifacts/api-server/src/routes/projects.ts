@@ -67,7 +67,8 @@ router.post("/projects", requireAuth, async (req, res): Promise<void> => {
   if (typeof data["technologies"] === "string") {
     try { data["technologies"] = JSON.parse(data["technologies"] as string); } catch { data["technologies"] = []; }
   }
-  const [project] = await db.insert(projectsTable).values(data as Parameters<typeof db.insert>[0] extends infer T ? T : never).returning();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [project] = await db.insert(projectsTable).values(data as any).returning();
   res.status(201).json(project);
 });
 

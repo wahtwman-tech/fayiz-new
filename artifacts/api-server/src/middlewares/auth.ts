@@ -19,7 +19,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
+    const payload = jwt.verify(token, JWT_SECRET!) as AuthPayload;
     (req as Request & { auth: AuthPayload }).auth = payload;
     next();
   } catch {
@@ -28,5 +28,5 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 }
 
 export function signToken(payload: AuthPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign(payload, JWT_SECRET!, { expiresIn: "30d" });
 }
