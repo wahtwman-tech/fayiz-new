@@ -67,9 +67,14 @@
     <!-- Main -->
     <main class="admin-main">
       <header class="topbar">
-        <div>
-          <div class="topbar-title">لوحة التحكم</div>
-          <div class="topbar-subtitle">مرحباً بك في نظام إدارة المحتوى</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="القائمة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <div class="topbar-title">لوحة التحكم</div>
+            <div class="topbar-subtitle">مرحباً بك في نظام إدارة المحتوى</div>
+          </div>
         </div>
         <div class="topbar-actions">
           <a href="/" target="_blank" class="btn btn--ghost btn--sm">
@@ -167,5 +172,38 @@
   <script src="/js/api.js"></script>
   <script src="/js/admin/auth.js"></script>
   <script src="/js/admin/dashboard.js"></script>
+  <script>
+    // Mobile menu functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      
+      if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', function() {
+          sidebar.classList.add('open');
+          if (overlay) overlay.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        });
+      }
+      
+      if (overlay && sidebar) {
+        overlay.addEventListener('click', function() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('open');
+          document.body.style.overflow = '';
+        });
+      }
+      
+      // Close sidebar on window resize to desktop
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('open');
+          if (overlay) overlay.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      });
+    });
+  </script>
 </body>
 </html>
