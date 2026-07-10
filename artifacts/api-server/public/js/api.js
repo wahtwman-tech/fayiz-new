@@ -61,12 +61,8 @@ const api = {
     return apiFetch('/services');
   },
 
-  // Projects - use SSR data for featured only
+  // Projects - always use API for fresh data
   getProjects: (featured) => {
-    const ssr = getSSRData();
-    if (featured && ssr && ssr.featuredProjects) {
-      return Promise.resolve(ssr.featuredProjects);
-    }
     return apiFetch('/projects' + (featured ? '?featured=true' : ''));
   },
 
