@@ -73,6 +73,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch {}
 
+  // About cover image
+  try {
+    const settings = await api.getSettings();
+    if (settings.about_cover_image && settings.about_cover_image.startsWith('data:')) {
+      const img = document.getElementById('about-cover-img');
+      if (img) {
+        img.src = settings.about_cover_image;
+        img.style.display = 'block';
+        const placeholder = img.nextElementSibling;
+        if (placeholder) placeholder.style.display = 'none';
+      }
+    }
+  } catch {}
+
   // Featured projects
   try {
     const projects = await api.getProjects(true);

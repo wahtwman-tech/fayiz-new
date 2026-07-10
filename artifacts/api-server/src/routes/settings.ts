@@ -59,14 +59,10 @@ router.post("/settings/logo", requireAuth, upload.single("logo"), async (req, re
     return;
   }
 
-  // Read file and convert to Base64
   const fileBuffer = fs.readFileSync(req.file.path);
   const base64Logo = `data:${req.file.mimetype};base64,${fileBuffer.toString("base64")}`;
-
-  // Delete temp file
   fs.unlinkSync(req.file.path);
 
-  // Save to settings
   const key = "logo_image";
   const existing = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key)).limit(1);
   if (existing.length > 0) {
@@ -76,6 +72,28 @@ router.post("/settings/logo", requireAuth, upload.single("logo"), async (req, re
   }
 
   res.json({ success: true, logo_image: base64Logo });
+});
+
+// Upload about cover image as Base64
+router.post("/settings/about-cover", requireAuth, upload.single("image"), async (req, res): Promise<void> => {
+  if (!req.file) {
+    res.status(400).json({ error: "No image file provided" });
+    return;
+  }
+
+  const fileBuffer = fs.readFileSync(req.file.path);
+  const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString("base64")}`;
+  fs.unlinkSync(req.file.path);
+
+  const key = "about_cover_image";
+  const existing = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key)).limit(1);
+  if (existing.length > 0) {
+    await db.update(siteSettingsTable).set({ value: base64Image }).where(eq(siteSettingsTable.key, key));
+  } else {
+    await db.insert(siteSettingsTable).values({ key, value: base64Image });
+  }
+
+  res.json({ success: true, about_cover_image: base64Image });
 });
 
 export default router;

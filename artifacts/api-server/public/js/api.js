@@ -78,6 +78,16 @@ const api = {
       body: formData,
     }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(new Error(e.error))));
   },
+  uploadAboutCover: (file) => {
+    const token = localStorage.getItem('cms_token');
+    const formData = new FormData();
+    formData.append('image', file);
+    return fetch(API_BASE + '/settings/about-cover', {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData,
+    }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(new Error(e.error))));
+  },
   login: (username, password) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   me: () => apiFetch('/auth/me'),
   changePassword: (d) => apiFetch('/auth/change-password', { method: 'POST', body: JSON.stringify(d) }),

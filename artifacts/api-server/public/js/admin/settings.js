@@ -81,6 +81,33 @@ function renderSettings(settings) {
       </div>
     </div>
   `;
+
+  // About Cover Image section
+  const aboutCoverSection = `
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-header"><div class="panel-title">صورة غلاف قسم "من أنا"</div></div>
+      <div class="panel-body">
+        <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+          <div style="width:200px;height:150px;border:2px dashed var(--border);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);overflow:hidden;" id="about-cover-preview">
+            ${settings.about_cover_image && settings.about_cover_image.startsWith('data:') 
+              ? `<img src="${settings.about_cover_image}" style="max-width:100%;max-height:100%;object-fit:cover;" />` 
+              : settings.about_cover_image 
+                ? `<img src="${settings.about_cover_image}" style="max-width:100%;max-height:100%;object-fit:cover;" />`
+                : '<span style="color:var(--text-muted);font-size:0.8rem;">💻 لم يتم رفع صورة</span>'
+            }
+          </div>
+          <div>
+            <input type="file" id="about-cover-file-input" accept="image/*" style="display:none;" />
+            <button type="button" class="btn btn--outline" id="about-cover-upload-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              رفع صورة الغلاف
+            </button>
+            <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px;">PNG, JPG, WebP - حجم أقصى 2MB</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
   
   content.innerHTML = logoSection + SETTING_GROUPS.map(group => `
     <div class="panel" style="margin-bottom:24px;">
@@ -174,7 +201,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       try {
         await api.uploadLogo(file);
-        // Update preview
         const reader = new FileReader();
         reader.onload = (ev) => {
           logoPreview.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:100%;object-fit:contain;" />`;
@@ -183,6 +209,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast('تم رفع الشعار بنجاح', 'success');
       } catch (err) {
         toast(err.message || 'فشل رفع الشعار', 'error');
+      }
+    });
+  }
+
+  // About Cover upload
+  const aboutCoverUploadBtn = document.getElementById('about-cover-upload-btn');
+  const aboutCoverFileInput = document.getElementById('about-cover-file-input');
+  const aboutCoverPreview = document.getElementById('about-cover-preview');
+  
+  if (aboutCoverUploadBtn && aboutCoverFileInput) {
+    aboutCoverUploadBtn.addEventListener('click', () => aboutCoverFileInput.click());
+    aboutCoverFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        await api.uploadAboutCover(file);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          aboutCoverPreview.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:100%;object-fit:cover;" />`;
+        };
+        reader.readAsDataURL(file);
+        toast('تم رفع صورة الغلاف بنجاح', 'success');
+      } catch (err) {
+        toast(err.message || 'فشل رفع الصورة', 'error');
       }
     });
   }
