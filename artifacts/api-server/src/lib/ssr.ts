@@ -36,6 +36,7 @@ export interface SSRSettings {
     slug: string;
     category: string;
     coverImage: string;
+    coverImageData: string | null;
   }>;
   aboutSections: Record<string, string>;
 }
