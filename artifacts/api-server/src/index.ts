@@ -2,7 +2,6 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { migrate } from "./lib/migrate";
 import { seedIfEmpty } from "./lib/seed";
-import { prewarmISRCache, isISRReady } from "./lib/ssr";
 
 const rawPort = process.env["PORT"] || "8080";
 
@@ -20,11 +19,8 @@ async function start(): Promise<void> {
     // Then seed default data
     await seedIfEmpty();
     
-    // Pre-warm ISR cache (fetch all data and build HTML once)
-    // This ensures visitors get cached content immediately
-    await prewarmISRCache();
-    
-    // Start the server
+    // Start the server immediately
+    // Cache will be built on first request (Lazy Cache Warming)
     app.listen(port, (err) => {
       if (err) {
         logger.error({ err }, "Error listening on port");
@@ -33,8 +29,7 @@ async function start(): Promise<void> {
 
       logger.info({ 
         port, 
-        isrReady: isISRReady(),
-        strategy: "On-Demand ISR (Cache-Forever)" 
+        strategy: "On-Demand ISR (Lazy Cache Warming)" 
       }, "Server listening");
     });
   } catch (error) {

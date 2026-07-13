@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { clearAllCache, clearISRCache, getCacheStats, validateCacheWebhookToken } from "@workspace/cache";
-import { refreshSSRCache, prewarmISRCache, isISRReady } from "../lib/ssr";
+import { refreshSSRCache, isISRReady, getISRStatus, renderHomepage } from "../lib/ssr";
 
 const router: IRouter = Router();
 
@@ -8,27 +8,7 @@ const router: IRouter = Router();
  * POST /api/admin/cache-rebuild
  * 
  * Admin endpoint to rebuild ISR cache after content updates.
- * This is called by the admin panel when content is updated.
- * 
- * Security:
- * - Requires x-webhook-token header with the correct secret
- * 
- * Headers:
- *   x-webhook-token: <your-webhook-secret>
- * 
- * Body (optional):
- *   {
- *     "fullRebuild": true  // Optional: if true, pre-warms all pages
- *   }
- * 
- * Responses:
- *   200: { 
- *     "success": true, 
- *     "message": "Cache rebuilt successfully",
- *     "stats": { ... }
- *   }
- *   401: { "error": "Invalid or missing webhook token" }
- *   500: { "error": "Failed to rebuild cache" }
+ * Destroys old cache and rebuilds with fresh data.
  */
 router.post("/admin/cache-rebuild", async (req: Request, res: Response): Promise<void> => {
   const webhookToken = req.headers["x-webhook-token"] as string | undefined;
@@ -42,32 +22,25 @@ router.post("/admin/cache-rebuild", async (req: Request, res: Response): Promise
   }
 
   try {
-    const body = req.body as { fullRebuild?: boolean } | undefined;
     const startTime = Date.now();
     
     // Step 1: Clear ISR cache (destroy old cached content)
     clearISRCache();
     
-    // Step 2: Rebuild cache (fetch fresh data from DB and cache it)
-    if (body?.fullRebuild) {
-      await prewarmISRCache();
-    } else {
-      await refreshSSRCache();
-    }
+    // Step 2: Rebuild cache (render homepage which will cache it)
+    await renderHomepage();
     
     const elapsed = Date.now() - startTime;
-    const stats = getCacheStats();
+    const status = getISRStatus();
     
     res.json({
       success: true,
-      message: body?.fullRebuild 
-        ? "Full cache rebuild completed" 
-        : "Cache invalidated and refreshed",
+      message: "Cache rebuilt successfully",
       timing: {
         rebuildMs: elapsed,
-        cacheReady: isISRReady()
+        cacheReady: status.ready
       },
-      stats
+      stats: getCacheStats()
     });
   } catch (err) {
     console.error("Cache rebuild error:", err);
@@ -82,13 +55,6 @@ router.post("/admin/cache-rebuild", async (req: Request, res: Response): Promise
  * POST /api/admin/cache-clear
  * 
  * Admin endpoint to clear ISR cache without rebuilding.
- * Use this when you want to invalidate cache but handle rebuild separately.
- * 
- * Headers:
- *   x-webhook-token: <your-webhook-secret>
- * 
- * Responses:
- *   200: { "success": true, "message": "Cache cleared" }
  */
 router.post("/admin/cache-clear", async (req: Request, res: Response): Promise<void> => {
   const webhookToken = req.headers["x-webhook-token"] as string | undefined;
@@ -120,30 +86,19 @@ router.post("/admin/cache-clear", async (req: Request, res: Response): Promise<v
  * GET /api/admin/cache-status
  * 
  * Admin endpoint to check ISR cache status.
- * 
- * Responses:
- *   200: { 
- *     "ready": boolean,
- *     "stats": { ... }
- *   }
  */
 router.get("/admin/cache-status", (_req: Request, res: Response): void => {
   res.json({
-    ready: isISRReady(),
+    ...getISRStatus(),
     stats: getCacheStats(),
     timestamp: new Date().toISOString()
   });
 });
 
 // =============================================================================
-// Legacy Endpoints (for backwards compatibility)
+// Legacy Endpoints
 // =============================================================================
 
-/**
- * POST /api/cache-clear
- * 
- * Legacy endpoint - redirects to /api/admin/cache-clear
- */
 router.post("/cache-clear", async (req: Request, res: Response): Promise<void> => {
   const webhookToken = req.headers["x-webhook-token"] as string | undefined;
   
@@ -178,11 +133,6 @@ router.post("/cache-clear", async (req: Request, res: Response): Promise<void> =
   }
 });
 
-/**
- * GET /api/cache-stats
- * 
- * Debug endpoint to view cache status.
- */
 router.get("/cache-stats", (_req: Request, res: Response): void => {
   res.json({
     ...getCacheStats(),
