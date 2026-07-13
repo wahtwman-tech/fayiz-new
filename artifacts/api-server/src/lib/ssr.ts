@@ -150,9 +150,9 @@ export async function refreshSSRCache(): Promise<SSRSettings> {
 // =============================================================================
 
 /**
- * Inject SSR data into HTML head with nonce
+ * Inject SSR data into HTML head
  */
-export function injectSSRData(html: string, data: SSRSettings, nonce?: string): string {
+export function injectSSRData(html: string, data: SSRSettings): string {
   const scriptContent = `window.__SSR_DATA__ = ${JSON.stringify(data)};`;
 
   // Insert before </head>
@@ -161,9 +161,7 @@ export function injectSSRData(html: string, data: SSRSettings, nonce?: string): 
     return html;
   }
 
-  // Add nonce attribute if provided
-  const nonceAttr = nonce ? ` nonce="${nonce}"` : "";
-  const script = `\n    <script${nonceAttr}>${scriptContent}</script>\n  `;
+  const script = `\n    <script>${scriptContent}</script>\n  `;
   return html.slice(0, injectPoint) + script + html.slice(injectPoint);
 }
 

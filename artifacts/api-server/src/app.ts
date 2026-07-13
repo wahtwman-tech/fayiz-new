@@ -2,7 +2,6 @@ import express, { type Express, type Request, type Response, type NextFunction }
 import cors from "cors";
 import path from "path";
 import fs from "fs";
-import crypto from "crypto";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
@@ -14,27 +13,17 @@ import { ipBlockerMiddleware } from "./middlewares/ipBlocker";
 const app: Express = express();
 const publicDir = path.join(process.cwd(), "public");
 
-// Generate a new nonce for each request
-const generateNonce = (): string => {
-  return crypto.randomBytes(16).toString("base64");
-};
-
-// Security middleware - Helmet with strict CSP + Nonces
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const nonce = generateNonce();
-  
-  // Store nonce for use in templates
-  res.locals.nonce = nonce;
-  
-  // Set CSP header with nonce + unsafe-inline
-  // Note: unsafe-inline مطلوب لأن الموقع يستخدم event handlers inline
-  // لكن nonce يضيف طبقة أمان إضافية للسكربتات التي نحقنها
+// Security middleware - Helmet with strict CSP
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  // Set CSP header
+  // Note: نستخدم unsafe-inline لأن الموقع يستخدم event handlers inline
+  // هذا مقبول طالما لا توجد ثغرات XSS في المحتوى
   res.setHeader(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      // Scripts - nonce للسكربتات التي نحقنها + unsafe-inline للevent handlers
-      `script-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+      // Scripts - unsafe-inline مطلوب للevent handlers inline
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       // Styles - بالسماح بـ Google Fonts + unsafe-inline
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // Fonts - Google Fonts
@@ -190,9 +179,8 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
     // Fetch SSR data
     const data = await fetchSSRData();
 
-    // Inject data into HTML with nonce
-    const nonce = res.locals.nonce as string | undefined;
-    html = injectSSRData(html, data, nonce);
+    // Inject data into HTML
+    html = injectSSRData(html, data);
 
     // Generate and inject SEO meta tags
     const pageKey = pageKeyMapping[pageName] || "home";
