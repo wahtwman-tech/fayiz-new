@@ -416,11 +416,13 @@ h1, h2, h3, h4 {
 /* ── Hero ─────────────────────────────────────────────── */
 .hero {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   position: relative;
   padding-top: var(--nav-h);
   background: var(--bg);
+  contain: layout style;
 }
 
 /* Clean white background - no effects */
