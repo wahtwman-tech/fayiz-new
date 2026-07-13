@@ -1,8 +1,8 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
-import helmet from "helmet";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
@@ -14,67 +14,56 @@ import { ipBlockerMiddleware } from "./middlewares/ipBlocker";
 const app: Express = express();
 const publicDir = path.join(process.cwd(), "public");
 
-// Security middleware - Helmet with strict CSP
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        // المصادر الأساسية
-        defaultSrc: ["'self'"],
-        
-        // Scripts - السماح بـ 'unsafe-inline' للـ SSR
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        
-        // Styles - السماح بـ Google Fonts والـ inline styles
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        
-        // الصور
-        imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
-        
-        // الخطوط - السماح بـ Google Fonts
-        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-        
-        // API connections
-        connectSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
-        
-        // الميديا (فيديو/صوت) - بدون كاميرا أو ميكروفون
-        mediaSrc: ["'self'", "blob:"],
-        
-        // تعطيل الكائنات المضمنة
-        objectSrc: ["'none'"],
-        
-        // URI base
-        baseUri: ["'self'"],
-        
-        // نموذج الإجراءات
-        formAction: ["'self'"],
-        
-        // منع iframe
-        frameAncestors: ["'none'"],
-        frameSrc: ["'none'"],
-        childSrc: ["'none'"],
-        
-        // Workers
-        workerSrc: ["'self'", "blob:"],
-        
-        // Manifest
-        manifestSrc: ["'self'"],
-        
-        // ترقية HTTP إلى HTTPS
-        upgradeInsecureRequests: [],
-      },
-    },
-    // تعطيل بعض السياسات الصارمة التي قد تسبب مشاكل
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  }),
-);
+// Generate a new nonce for each request
+const generateNonce = (): string => {
+  return crypto.randomBytes(16).toString("base64");
+};
+
+// Security middleware - Helmet with strict CSP + Nonces
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const nonce = generateNonce();
+  
+  // Store nonce for use in templates
+  res.locals.nonce = nonce;
+  
+  // Set CSP header with nonce
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      // Scripts - باستخدام nonce (فقط سكربتات السيرفر مسموحة)
+      `script-src 'self' 'nonce-${nonce}'`,
+      // Styles - بالسماح بـ Google Fonts فقط
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      // Fonts - Google Fonts
+      "font-src 'self' data: https://fonts.gstatic.com",
+      // Images
+      "img-src 'self' data: blob: https: http:",
+      // API connections
+      "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com",
+      // Media
+      "media-src 'self' blob:",
+      // Objects
+      "object-src 'none'",
+      // Base
+      "base-uri 'self'",
+      // Forms
+      "form-action 'self'",
+      // Frames
+      "frame-ancestors 'none'",
+      "frame-src 'none'",
+      "child-src 'none'",
+      // Workers
+      "worker-src 'self' blob:",
+      // Manifest
+      "manifest-src 'self'",
+      // Upgrade insecure
+      "upgrade-insecure-requests",
+    ].join("; ")
+  );
+  
+  next();
+});
 
 // Set Permissions-Policy header manually (تعطيل الكاميرا والميكروفون والموقع)
 app.use((_req: Request, res: Response, next: NextFunction) => {
@@ -199,8 +188,9 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
     // Fetch SSR data
     const data = await fetchSSRData();
 
-    // Inject data into HTML
-    html = injectSSRData(html, data);
+    // Inject data into HTML with nonce
+    const nonce = res.locals.nonce as string | undefined;
+    html = injectSSRData(html, data, nonce);
 
     // Generate and inject SEO meta tags
     const pageKey = pageKeyMapping[pageName] || "home";
