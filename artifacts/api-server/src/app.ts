@@ -26,14 +26,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Store nonce for use in templates
   res.locals.nonce = nonce;
   
-  // Set CSP header with nonce
+  // Set CSP header with nonce + unsafe-inline
+  // Note: unsafe-inline مطلوب لأن الموقع يستخدم event handlers inline
+  // لكن nonce يضيف طبقة أمان إضافية للسكربتات التي نحقنها
   res.setHeader(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      // Scripts - باستخدام nonce (فقط سكربتات السيرفر مسموحة)
-      `script-src 'self' 'nonce-${nonce}'`,
-      // Styles - بالسماح بـ Google Fonts فقط
+      // Scripts - nonce للسكربتات التي نحقنها + unsafe-inline للevent handlers
+      `script-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+      // Styles - بالسماح بـ Google Fonts + unsafe-inline
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // Fonts - Google Fonts
       "font-src 'self' data: https://fonts.gstatic.com",
