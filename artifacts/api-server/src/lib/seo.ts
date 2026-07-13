@@ -127,7 +127,6 @@ const PAGE_CONFIGS: Record<string, PageSEOConfig> = {
 // ============================================================================
 
 const SEO_SETTINGS_CACHE_KEY = "seo:settings";
-const SEO_SETTINGS_TTL = 3600; // 1 hour
 
 interface SEOSettings {
   siteNameAr: string;
@@ -163,7 +162,7 @@ async function fetchSEOSettings(): Promise<SEOSettings> {
     defaultLang: settings["default_lang"] || "ar",
   };
 
-  setCache(SEO_SETTINGS_CACHE_KEY, result, SEO_SETTINGS_TTL);
+  setCache(SEO_SETTINGS_CACHE_KEY, result);
   return result;
 }
 
@@ -349,7 +348,6 @@ export function injectMetaTags(html: string, meta: SEOMeta, lang: string = "ar")
 // ============================================================================
 
 const SITEMAP_CACHE_KEY = "seo:sitemap";
-const SITEMAP_TTL = 1800; // 30 minutes
 
 export interface SitemapUrl {
   loc: string;
@@ -432,7 +430,7 @@ ${urls.map(url => `  <url>
   </url>`).join("\n")}
 </urlset>`;
 
-  setCache(SITEMAP_CACHE_KEY, sitemap, SITEMAP_TTL);
+  setCache(SITEMAP_CACHE_KEY, sitemap);
   return sitemap;
 }
 
