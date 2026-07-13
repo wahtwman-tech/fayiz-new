@@ -46,8 +46,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${images.length > 1 ? `<div class="gallery-thumbs">${thumbsHtml}</div>` : ''}
       </div>` : '';
 
-    const techTags = (project.technologies || []).map(t => `<span class="tech-tag">${t}</span>`).join('');
+const technologies = Array.isArray(project.technologies)
+  ? project.technologies
+  : (project.technologies || '')
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
 
+const techTags = technologies
+  .map(t => `<span class="tech-tag">${t}</span>`)
+  .join('');
+
+    
     const backLabel = lang === 'ar' ? 'العودة للأعمال' : 'Back to Portfolio';
     const problemLabel = lang === 'ar' ? 'المشكلة' : 'The Problem';
     const solutionLabel = lang === 'ar' ? 'الحل' : 'The Solution';
