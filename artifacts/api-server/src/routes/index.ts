@@ -9,6 +9,7 @@ import projectsRouter from "./projects";
 import navRouter from "./nav";
 import contactRouter from "./contact";
 import cacheRouter from "./cache";
+import seoRouter from "./seo";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(projectsRouter);
 router.use(navRouter);
 router.use(contactRouter);
 router.use(cacheRouter);
+router.use(seoRouter);
 
 export default router;

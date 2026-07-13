@@ -7,12 +7,13 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { seedIfEmpty } from "./lib/seed";
 import { renderPage, fetchSSRData, injectSSRData } from "./lib/ssr";
+import { generatePageMeta, injectMetaTags, generateRobotsTxt, generateSitemap } from "./lib/seo";
 
 const app: Express = express();
 const publicDir = path.join(process.cwd(), "public");
 
 // Pages that need SSR (will have data injected)
-const srrPages = [
+const ssrPages = [
   "index.html",
   "about.html",
   "contact.html",
@@ -21,6 +22,17 @@ const srrPages = [
   "page.html",
   "project.html",
 ];
+
+// Page key mapping
+const pageKeyMapping: Record<string, string> = {
+  "index.html": "home",
+  "about.html": "about",
+  "contact.html": "contact",
+  "portfolio.html": "portfolio",
+  "services.html": "services",
+  "page.html": "page",
+  "project.html": "project",
+};
 
 app.use(
   pinoHttp({
@@ -50,13 +62,33 @@ app.use("/css", express.static(path.join(publicDir, "css")));
 app.use("/js", express.static(path.join(publicDir, "js")));
 app.use("/uploads", express.static(path.join(publicDir, "uploads")));
 
+// SEO Routes (before API routes)
+app.get("/robots.txt", (_req: Request, res: Response) => {
+  const robotsTxt = generateRobotsTxt();
+  res.setHeader("Content-Type", "text/plain");
+  res.setHeader("Cache-Control", "public, max-age=86400");
+  res.send(robotsTxt);
+});
+
+app.get("/sitemap.xml", async (_req: Request, res: Response) => {
+  try {
+    const sitemap = await generateSitemap();
+    res.setHeader("Content-Type", "application/xml");
+    res.setHeader("Cache-Control", "public, max-age=1800");
+    res.send(sitemap);
+  } catch (err) {
+    logger.error({ err }, "Sitemap error");
+    res.status(500).send("Error generating sitemap");
+  }
+});
+
 // API routes
 app.use("/api", router);
 
 // Seed DB on startup
 seedIfEmpty().catch((err: unknown) => logger.error({ err }, "Seed failed"));
 
-// SSR for public pages
+// SSR for public pages with dynamic meta tags
 app.use(async (req: Request, res: Response, next: NextFunction) => {
   // Skip non-HTML requests
   if (!req.path.endsWith(".html") && req.path !== "/") {
@@ -71,7 +103,7 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
 
   // Check if this page needs SSR
   const pageName = filename.slice(1); // Remove leading /
-  if (!srrPages.includes(pageName)) {
+  if (!ssrPages.includes(pageName)) {
     return next();
   }
 
@@ -90,6 +122,26 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
     // Inject data into HTML
     html = injectSSRData(html, data);
 
+    // Generate and inject SEO meta tags
+    const pageKey = pageKeyMapping[pageName] || "home";
+    const lang = req.query.lang as string || "ar";
+    
+    // Get project-specific data if applicable
+    let metaOptions: Parameters<typeof generatePageMeta>[0] = {
+      pageKey,
+      lang,
+    };
+
+    // For project pages, get dynamic data
+    if (pageName === "project.html" && req.query.id) {
+      // Will be populated from SSR data in a real implementation
+      metaOptions.customTitleAr = `مشروع رقم ${req.query.id}`;
+      metaOptions.customTitleEn = `Project #${req.query.id}`;
+    }
+
+    const meta = await generatePageMeta(metaOptions);
+    html = injectMetaTags(html, meta, lang);
+
     // Send the modified HTML
     res.type("html").send(html);
   } catch (err) {
@@ -98,8 +150,13 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// Serve static files for admin (no SSR needed)
-app.use("/admin", express.static(path.join(publicDir, "admin")));
+// Serve static files for admin (no SSR, add noindex/nofollow via headers)
+app.use("/admin", express.static(path.join(publicDir, "admin"), {
+  setHeaders: (res) => {
+    // Add noindex, nofollow for all admin pages
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  }
+}));
 
 // Serve remaining static files
 app.use(express.static(publicDir));
