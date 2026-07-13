@@ -1,6 +1,7 @@
 /**
  * SSR - Server-Side Rendering utilities
  * Injects data into HTML to prevent flash of wrong content
+ * Uses in-memory caching for performance optimization
  */
 
 import fs from "fs";
@@ -8,8 +9,12 @@ import path from "path";
 import { eq } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { siteSettingsTable, navItemsTable, sectionsTable, servicesTable, projectsTable } from "@workspace/db";
+import { getCache, setCache } from "@workspace/cache";
 
 const publicDir = path.join(process.cwd(), "public");
+
+// Cache key for SSR data
+const SSR_CACHE_KEY = "ssr:homepage";
 
 export interface SSRSettings {
   settings: Record<string, string>;
@@ -42,9 +47,30 @@ export interface SSRSettings {
 }
 
 /**
- * Fetch all data needed for SSR
+ * Fetch all data needed for SSR with caching
+ * Data is fetched from cache if available, otherwise from database
  */
 export async function fetchSSRData(): Promise<SSRSettings> {
+  // Check cache first
+  const cached = getCache<SSRSettings>(SSR_CACHE_KEY);
+  if (cached) {
+    return cached;
+  }
+
+  // Cache miss - fetch from database
+  const data = await fetchSSRDataFromDB();
+  
+  // Store in cache
+  setCache(SSR_CACHE_KEY, data);
+  
+  return data;
+}
+
+/**
+ * Fetch all data directly from database (bypasses cache)
+ * Called on cache miss or when explicitly refreshing
+ */
+async function fetchSSRDataFromDB(): Promise<SSRSettings> {
   // Fetch settings
   const settingsRaw = await db.select().from(siteSettingsTable);
   const settings: Record<string, string> = {};
@@ -94,6 +120,15 @@ export async function fetchSSRData(): Promise<SSRSettings> {
   }
 
   return { settings, nav, services, featuredProjects, aboutSections };
+}
+
+/**
+ * Force refresh SSR cache (called when admin updates content)
+ */
+export async function refreshSSRCache(): Promise<SSRSettings> {
+  const data = await fetchSSRDataFromDB();
+  setCache(SSR_CACHE_KEY, data);
+  return data;
 }
 
 /**
