@@ -1,7 +1,10 @@
 /**
- * SSR - Server-Side Rendering utilities
- * Injects data into HTML to prevent flash of wrong content
- * Uses in-memory caching for performance optimization
+ * SSR - Server-Side Rendering with On-Demand ISR
+ * 
+ * Strategy: On-Demand Incremental Static Regeneration
+ * 1. Cache-Forever: Data is cached once at startup and stays forever
+ * 2. On-Demand Rebuild: When admin updates content, cache is destroyed and rebuilt
+ * 3. Zero DB Queries for Visitors: All data served from cache
  */
 
 import fs from "fs";
@@ -9,11 +12,12 @@ import path from "path";
 import { eq } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { siteSettingsTable, navItemsTable, sectionsTable, servicesTable, projectsTable } from "@workspace/db";
-import { getCache, setCache } from "@workspace/cache";
+import { getCache, setCache, peekCache, ISR_CACHE_KEYS, isISRCacheWarmed } from "@workspace/cache";
+import { logger } from "./logger";
 
 const publicDir = path.join(process.cwd(), "public");
 
-// Cache key for SSR data
+// Legacy cache key for backwards compatibility
 const SSR_CACHE_KEY = "ssr:homepage";
 
 export interface SSRSettings {
@@ -46,30 +50,16 @@ export interface SSRSettings {
   aboutSections: Record<string, string>;
 }
 
-/**
- * Fetch all data needed for SSR with caching
- * Data is fetched from cache if available, otherwise from database
- */
-export async function fetchSSRData(): Promise<SSRSettings> {
-  // Check cache first
-  const cached = getCache<SSRSettings>(SSR_CACHE_KEY);
-  if (cached) {
-    return cached;
-  }
-
-  // Cache miss - fetch from database
-  const data = await fetchSSRDataFromDB();
-  
-  // Store in cache
-  setCache(SSR_CACHE_KEY, data);
-  
-  return data;
+export interface PageRenderResult {
+  html: string;
+  fromCache: boolean;
+  cacheKey: string;
 }
 
-/**
- * Fetch all data directly from database (bypasses cache)
- * Called on cache miss or when explicitly refreshing
- */
+// =============================================================================
+// Database Fetching Functions
+// =============================================================================
+
 async function fetchSSRDataFromDB(): Promise<SSRSettings> {
   // Fetch settings
   const settingsRaw = await db.select().from(siteSettingsTable);
@@ -122,14 +112,54 @@ async function fetchSSRDataFromDB(): Promise<SSRSettings> {
   return { settings, nav, services, featuredProjects, aboutSections };
 }
 
+// =============================================================================
+// Cache Operations (Cache-Forever Strategy)
+// =============================================================================
+
+/**
+ * Fetch all data needed for SSR with caching
+ * Data is fetched from cache if available, otherwise from database
+ */
+export async function fetchSSRData(): Promise<SSRSettings> {
+  // Check ISR cache first
+  const cached = getCache<SSRSettings>(ISR_CACHE_KEYS.HOMEPAGE);
+  if (cached) {
+    return cached;
+  }
+
+  // Check legacy cache
+  const legacyCached = getCache<SSRSettings>(SSR_CACHE_KEY);
+  if (legacyCached) {
+    // Migrate to new cache key
+    setCache(ISR_CACHE_KEYS.HOMEPAGE, legacyCached);
+    return legacyCached;
+  }
+
+  // Cache miss - fetch from database
+  logger.info("SSR cache miss - fetching from database");
+  const data = await fetchSSRDataFromDB();
+  
+  // Store in both caches for compatibility
+  setCache(ISR_CACHE_KEYS.HOMEPAGE, data);
+  setCache(SSR_CACHE_KEY, data);
+  
+  return data;
+}
+
 /**
  * Force refresh SSR cache (called when admin updates content)
  */
 export async function refreshSSRCache(): Promise<SSRSettings> {
+  logger.info("Refreshing SSR cache from database");
   const data = await fetchSSRDataFromDB();
+  setCache(ISR_CACHE_KEYS.HOMEPAGE, data);
   setCache(SSR_CACHE_KEY, data);
   return data;
 }
+
+// =============================================================================
+// On-Demand ISR - Page Rendering
+// =============================================================================
 
 /**
  * Inject SSR data into HTML head
@@ -148,14 +178,24 @@ export function injectSSRData(html: string, data: SSRSettings): string {
 }
 
 /**
- * Read HTML file and inject SSR data
+ * Render a page with ISR caching
+ * Returns cached HTML if available, otherwise builds and caches it
  */
-export async function renderPage(filename: string): Promise<string> {
-  const filePath = path.join(publicDir, filename);
+export async function renderPage(filename: string): Promise<PageRenderResult> {
+  const cacheKey = ISR_CACHE_KEYS.PAGE(filename);
   
-  // Check if file exists
+  // Check cache first (zero DB queries if cached)
+  const cachedHtml = peekCache<string>(cacheKey);
+  if (cachedHtml) {
+    return { html: cachedHtml, fromCache: true, cacheKey };
+  }
+
+  // Cache miss - build page
+  logger.info(`Building page ${filename} (cache miss)`);
+  
+  const filePath = path.join(publicDir, filename);
   if (!fs.existsSync(filePath)) {
-    return "";
+    return { html: "", fromCache: false, cacheKey };
   }
 
   // Read HTML file
@@ -167,13 +207,68 @@ export async function renderPage(filename: string): Promise<string> {
   // Inject data into HTML
   html = injectSSRData(html, data);
 
-  return html;
+  // Cache the rendered HTML forever
+  setCache(cacheKey, html);
+
+  return { html, fromCache: false, cacheKey };
 }
+
+/**
+ * Render homepage with ISR caching
+ */
+export async function renderHomepage(): Promise<PageRenderResult> {
+  return renderPage("index.html");
+}
+
+// =============================================================================
+// Server Startup - Pre-warm Cache
+// =============================================================================
+
+/**
+ * Pre-warm all ISR caches at server startup
+ * This ensures visitors get cached content immediately
+ */
+export async function prewarmISRCache(): Promise<void> {
+  logger.info("Pre-warming ISR cache...");
+  const startTime = Date.now();
+  
+  try {
+    // Pre-warm homepage data
+    await fetchSSRData();
+    
+    // Pre-warm homepage HTML
+    await renderPage("index.html");
+    
+    const elapsed = Date.now() - startTime;
+    logger.info(`ISR cache warmed in ${elapsed}ms`);
+  } catch (error) {
+    logger.error({ error }, "Failed to pre-warm ISR cache");
+  }
+}
+
+/**
+ * Check if ISR is ready
+ */
+export function isISRReady(): boolean {
+  return isISRCacheWarmed();
+}
+
+// =============================================================================
+// Page-specific Data (still cached)
+// =============================================================================
 
 /**
  * Get page-specific data
  */
 export async function fetchPageData(page: string): Promise<Record<string, unknown>> {
+  // Try cache first
+  const cacheKey = `page-data:${page}`;
+  const cached = getCache<Record<string, unknown>>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // Fetch from database
   const sectionsRaw = await db.select().from(sectionsTable).where(eq(sectionsTable.pageKey, page));
   const result: Record<string, unknown> = {};
   
@@ -184,5 +279,7 @@ export async function fetchPageData(page: string): Promise<Record<string, unknow
     };
   }
 
+  // Cache the result
+  setCache(cacheKey, result);
   return result;
 }

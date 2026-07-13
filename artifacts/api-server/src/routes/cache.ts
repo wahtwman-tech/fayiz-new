@@ -1,34 +1,150 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { clearAllCache, getCacheStats, validateCacheWebhookToken } from "@workspace/cache";
-import { refreshSSRCache } from "../lib/ssr";
+import { clearAllCache, clearISRCache, getCacheStats, validateCacheWebhookToken } from "@workspace/cache";
+import { refreshSSRCache, prewarmISRCache, isISRReady } from "../lib/ssr";
 
 const router: IRouter = Router();
 
 /**
- * POST /api/cache-clear
+ * POST /api/admin/cache-rebuild
  * 
- * Webhook endpoint to clear all cache and optionally refresh SSR data.
- * Used by the admin panel after updating content to ensure visitors see the latest data.
+ * Admin endpoint to rebuild ISR cache after content updates.
+ * This is called by the admin panel when content is updated.
  * 
  * Security:
  * - Requires x-webhook-token header with the correct secret
- * - The token should be the same as CACHE_WEBHOOK_SECRET environment variable
  * 
  * Headers:
  *   x-webhook-token: <your-webhook-secret>
  * 
  * Body (optional):
  *   {
- *     "refreshSSR": true  // Optional: if true, also pre-warms the cache with fresh data
+ *     "fullRebuild": true  // Optional: if true, pre-warms all pages
  *   }
  * 
  * Responses:
- *   200: { "success": true, "message": "Cache cleared" }
+ *   200: { 
+ *     "success": true, 
+ *     "message": "Cache rebuilt successfully",
+ *     "stats": { ... }
+ *   }
  *   401: { "error": "Invalid or missing webhook token" }
- *   500: { "error": "Failed to clear cache" }
+ *   500: { "error": "Failed to rebuild cache" }
+ */
+router.post("/admin/cache-rebuild", async (req: Request, res: Response): Promise<void> => {
+  const webhookToken = req.headers["x-webhook-token"] as string | undefined;
+  
+  if (!validateCacheWebhookToken(webhookToken)) {
+    res.status(401).json({
+      error: "Unauthorized",
+      message: "Invalid or missing x-webhook-token header"
+    });
+    return;
+  }
+
+  try {
+    const body = req.body as { fullRebuild?: boolean } | undefined;
+    const startTime = Date.now();
+    
+    // Step 1: Clear ISR cache (destroy old cached content)
+    clearISRCache();
+    
+    // Step 2: Rebuild cache (fetch fresh data from DB and cache it)
+    if (body?.fullRebuild) {
+      await prewarmISRCache();
+    } else {
+      await refreshSSRCache();
+    }
+    
+    const elapsed = Date.now() - startTime;
+    const stats = getCacheStats();
+    
+    res.json({
+      success: true,
+      message: body?.fullRebuild 
+        ? "Full cache rebuild completed" 
+        : "Cache invalidated and refreshed",
+      timing: {
+        rebuildMs: elapsed,
+        cacheReady: isISRReady()
+      },
+      stats
+    });
+  } catch (err) {
+    console.error("Cache rebuild error:", err);
+    res.status(500).json({
+      error: "Failed to rebuild cache",
+      message: err instanceof Error ? err.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/admin/cache-clear
+ * 
+ * Admin endpoint to clear ISR cache without rebuilding.
+ * Use this when you want to invalidate cache but handle rebuild separately.
+ * 
+ * Headers:
+ *   x-webhook-token: <your-webhook-secret>
+ * 
+ * Responses:
+ *   200: { "success": true, "message": "Cache cleared" }
+ */
+router.post("/admin/cache-clear", async (req: Request, res: Response): Promise<void> => {
+  const webhookToken = req.headers["x-webhook-token"] as string | undefined;
+  
+  if (!validateCacheWebhookToken(webhookToken)) {
+    res.status(401).json({
+      error: "Unauthorized"
+    });
+    return;
+  }
+
+  try {
+    const statsBefore = getCacheStats();
+    clearISRCache();
+    
+    res.json({
+      success: true,
+      message: "ISR cache cleared",
+      statsBefore: statsBefore.size
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: "Failed to clear cache"
+    });
+  }
+});
+
+/**
+ * GET /api/admin/cache-status
+ * 
+ * Admin endpoint to check ISR cache status.
+ * 
+ * Responses:
+ *   200: { 
+ *     "ready": boolean,
+ *     "stats": { ... }
+ *   }
+ */
+router.get("/admin/cache-status", (_req: Request, res: Response): void => {
+  res.json({
+    ready: isISRReady(),
+    stats: getCacheStats(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// =============================================================================
+// Legacy Endpoints (for backwards compatibility)
+// =============================================================================
+
+/**
+ * POST /api/cache-clear
+ * 
+ * Legacy endpoint - redirects to /api/admin/cache-clear
  */
 router.post("/cache-clear", async (req: Request, res: Response): Promise<void> => {
-  // Validate webhook token from x-webhook-token header
   const webhookToken = req.headers["x-webhook-token"] as string | undefined;
   
   if (!validateCacheWebhookToken(webhookToken)) {
@@ -39,16 +155,11 @@ router.post("/cache-clear", async (req: Request, res: Response): Promise<void> =
   }
 
   try {
-    // Get stats before clearing (for logging)
     const statsBefore = getCacheStats();
-    
-    // Clear all cache
     clearAllCache();
     
-    // Check if we should also refresh SSR cache (pre-warm it)
     const body = req.body as { refreshSSR?: boolean } | undefined;
     if (body?.refreshSSR) {
-      // Pre-warm cache with fresh data from database
       await refreshSSRCache();
     }
 
@@ -71,10 +182,12 @@ router.post("/cache-clear", async (req: Request, res: Response): Promise<void> =
  * GET /api/cache-stats
  * 
  * Debug endpoint to view cache status.
- * In production, you might want to protect this or remove it.
  */
 router.get("/cache-stats", (_req: Request, res: Response): void => {
-  res.json(getCacheStats());
+  res.json({
+    ...getCacheStats(),
+    isrReady: isISRReady()
+  });
 });
 
 export default router;
