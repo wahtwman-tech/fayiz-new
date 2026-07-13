@@ -9,6 +9,10 @@
   <!-- Preconnect for faster font loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://i.ibb.co" />
+  
+  <!-- Preload logo image for faster display -->
+  <link rel="preload" as="image" href="https://i.ibb.co/LdD44pTY/download.jpg" />
   
   <!-- Preload fonts for LCP -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" crossorigin />
@@ -31,7 +35,7 @@
   <nav class="navbar" id="navbar">
     <div class="container">
       <a href="/" class="nav-logo">
-        <div class="logo-icon" id="nav-logo-text">م.ح</div>
+        <img src="https://i.ibb.co/LdD44pTY/download.jpg" alt="Logo" class="logo-img" id="nav-logo-img" width="40" height="40" />
         <span id="nav-site-title"></span>
       </a>
       <div class="nav-links" id="nav-links"></div>
@@ -48,9 +52,9 @@
   <div class="mobile-drawer-overlay" id="drawer-overlay"></div>
   <div class="mobile-drawer" id="mobile-drawer">
     <div class="mobile-drawer-header">
-      <div class="nav-logo">
-        <div class="logo-icon" id="drawer-logo">م.ح</div>
-      </div>
+      <a href="/" class="nav-logo">
+        <img src="https://i.ibb.co/LdD44pTY/download.jpg" alt="Logo" class="logo-img" width="40" height="40" />
+      </a>
       <button class="mobile-drawer-close" id="drawer-close">✕</button>
     </div>
     <nav class="mobile-drawer-nav" id="mobile-drawer-nav"></nav>
@@ -185,8 +189,7 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <img src="" alt="Logo" id="footer-logo-img" class="footer-logo-img" style="display:none;" />
-          <div class="logo-text" id="footer-logo-text">م.ح</div>
+          <img src="https://i.ibb.co/LdD44pTY/download.jpg" alt="Logo" class="footer-logo-img" width="48" height="48" />
           <p id="footer-desc" data-ar="مطور ويب محترف متخصص في بناء حلول رقمية متكاملة." data-en="Professional web developer specializing in complete digital solutions.">
             مطور ويب محترف متخصص في بناء حلول رقمية متكاملة.
           </p>

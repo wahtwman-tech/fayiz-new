@@ -8,6 +8,8 @@
   <!-- Preconnect for faster font loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://i.ibb.co" />
+  <link rel="preload" as="image" href="https://i.ibb.co/LdD44pTY/download.jpg" />
   
   <!-- Critical CSS - Above the fold styles -->
   <style>:root{--bg:#fff;--bg-2:#f5f5f5;--accent:#b8860b;--accent-lite:#d4a574;--accent-glow:rgba(184,134,11,.2);--text:#1a1a1a;--text-2:#4a4a4a;--font-ar:'Cairo',sans-serif;--font-en:'Plus Jakarta Sans',sans-serif;--shadow-glow:0 4px 20px rgba(184,134,11,.15);--nav-h:64px;--ease:cubic-bezier(.25,.46,.45,.94);--t:all .3s var(--ease)}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:var(--font-en);line-height:1.6;overflow-x:hidden;min-height:100vh}[dir=rtl],[dir=rtl] body{font-family:var(--font-ar);direction:rtl}a{color:inherit;text-decoration:none}img{max-width:100%;height:auto;display:block}.container{width:100%;max-width:1160px;margin-inline:auto;padding-inline:clamp(20px,5vw,48px)}.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:1000;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);transition:var(--t)}.navbar .container{display:flex;align-items:center;justify-content:space-between;height:100%}.nav-logo{display:flex;align-items:center;gap:8px;font-weight:700}.nav-links{display:flex;gap:8px;align-items:center}.nav-right{display:flex;align-items:center;gap:8px}.lang-toggle{background:0;border:2px solid var(--accent);color:var(--accent);padding:6px 12px;border-radius:20px;font-weight:600;font-size:.8rem;transition:var(--t);cursor:pointer}.lang-toggle:hover{background:var(--accent);color:#fff}.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:8px;font-weight:600;font-size:.9rem;transition:var(--t);cursor:pointer}.btn--primary{background:var(--accent);color:#fff;box-shadow:0 4px 24px var(--accent-glow)}.btn--primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glow)}.btn--lg{padding:16px 36px;font-size:1rem}.btn svg{width:17px;height:17px;flex-shrink:0}main{padding-top:var(--nav-h)}.scroll-progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:1001;transition:width .1s}.hamburger{display:none;flex-direction:column;gap:5px;padding:8px;cursor:pointer}.hamburger span{display:block;width:24px;height:2px;background:var(--text);transition:var(--t)}@media(max-width:768px){.nav-links{display:none}.hamburger{display:flex}}</style>
@@ -20,7 +22,7 @@
   <div class="scroll-progress" id="scroll-progress"></div>
   <nav class="navbar scrolled" id="navbar">
     <div class="container">
-      <a href="/" class="nav-logo"><div class="logo-icon" id="nav-logo-text">م.ح</div></a>
+      <a href="/" class="nav-logo"><img src="https://i.ibb.co/LdD44pTY/download.jpg" alt="Logo" class="logo-img" width="40" height="40" /></a>
       <div class="nav-links" id="nav-links"></div>
       <div class="nav-right">
         <button class="lang-toggle" id="lang-toggle">EN</button>
@@ -31,7 +33,7 @@
   <div class="mobile-drawer-overlay" id="drawer-overlay"></div>
   <div class="mobile-drawer" id="mobile-drawer">
     <div class="mobile-drawer-header">
-      <div class="nav-logo"><div class="logo-icon" id="drawer-logo">م.ح</div></div>
+      <a href="/" class="nav-logo"><img src="https://i.ibb.co/LdD44pTY/download.jpg" alt="Logo" class="logo-img" width="40" height="40" /></a>
       <button class="mobile-drawer-close" id="drawer-close">✕</button>
     </div>
     <nav class="mobile-drawer-nav" id="mobile-drawer-nav"></nav>
