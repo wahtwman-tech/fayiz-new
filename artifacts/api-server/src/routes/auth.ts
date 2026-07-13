@@ -4,10 +4,12 @@ import { db } from "@workspace/db";
 import { adminUsersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { signToken, requireAuth } from "../middlewares/auth";
+import { getClientIP, recordFailedLogin, clearFailedAttempts } from "../middlewares/ipBlocker";
 
 const router: IRouter = Router();
 
 router.post("/auth/login", async (req, res): Promise<void> => {
+  const ip = getClientIP(req);
   const { username, password } = req.body as { username?: string; password?: string };
 
   if (!username || !password) {
@@ -18,16 +20,21 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   const [user] = await db.select().from(adminUsersTable).where(eq(adminUsersTable.username, username)).limit(1);
 
   if (!user) {
+    await recordFailedLogin(ip, username);
     res.status(401).json({ error: "Invalid credentials" });
     return;
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
+    await recordFailedLogin(ip, username);
     res.status(401).json({ error: "Invalid credentials" });
     return;
   }
 
+  // Clear failed attempts on successful login
+  await clearFailedAttempts(ip);
+  
   const token = signToken({ userId: user.id, username: user.username });
   res.json({ token, username: user.username });
 });

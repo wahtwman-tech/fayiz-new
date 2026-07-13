@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import path from "path";
 import fs from "fs";
 import pinoHttp from "pino-http";
@@ -8,9 +9,51 @@ import { logger } from "./lib/logger";
 import { seedIfEmpty } from "./lib/seed";
 import { renderPage, fetchSSRData, injectSSRData } from "./lib/ssr";
 import { generatePageMeta, injectMetaTags, generateRobotsTxt, generateSitemap } from "./lib/seo";
+import { ipBlockerMiddleware } from "./middlewares/ipBlocker";
 
 const app: Express = express();
 const publicDir = path.join(process.cwd(), "public");
+
+// Security middleware - Helmet with strict CSP
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        fontSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
+        mediaSrc: ["'self'", "blob:"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        frameSrc: ["'none'"],
+        childSrc: ["'none'"],
+        workerSrc: ["'self'", "blob:"],
+        manifestSrc: ["'self'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  }),
+);
+
+// Hide server technology headers
+app.disable("x-powered-by");
+app.disable("etag");
+
+// Apply IP blocker to auth routes
+app.use("/api/auth/login", ipBlockerMiddleware());
 
 // Pages that need SSR (will have data injected)
 const ssrPages = [
@@ -150,11 +193,16 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// Serve static files for admin (no SSR, add noindex/nofollow via headers)
-app.use("/admin", express.static(path.join(publicDir, "admin"), {
+// Serve static files for admin panel with hidden path
+// Changed from /admin to /fayiz-editor to prevent path discovery
+app.use("/fayiz-editor", express.static(path.join(publicDir, "admin"), {
   setHeaders: (res) => {
     // Add noindex, nofollow for all admin pages
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    // Prevent caching of admin pages
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
   }
 }));
 

@@ -147,6 +147,27 @@ export async function migrate(): Promise<void> {
       );
     `);
 
+    // Security tables for IP banning and login attempts
+    await execute(`
+      CREATE TABLE IF NOT EXISTS ip_bans (
+        id SERIAL PRIMARY KEY,
+        ip_address VARCHAR(45) NOT NULL UNIQUE,
+        failed_attempts INTEGER NOT NULL DEFAULT 1,
+        banned_until TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    await execute(`
+      CREATE TABLE IF NOT EXISTS login_attempts (
+        id SERIAL PRIMARY KEY,
+        ip_address VARCHAR(45) NOT NULL,
+        username VARCHAR(255) NOT NULL,
+        success INTEGER NOT NULL DEFAULT 0,
+        attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
     // Create indexes
     await execute(`CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username);`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_site_settings_key ON site_settings(key);`);
@@ -167,6 +188,13 @@ export async function migrate(): Promise<void> {
     await execute(`CREATE INDEX IF NOT EXISTS idx_project_images_sort_order ON project_images(sort_order);`);
     await execute(`CREATE INDEX IF NOT EXISTS idx_project_images_is_primary ON project_images(is_primary);`);
 
+    // Security table indexes
+    await execute(`CREATE INDEX IF NOT EXISTS idx_ip_bans_ip_address ON ip_bans(ip_address);`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_ip_bans_banned_until ON ip_bans(banned_until);`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_address ON login_attempts(ip_address);`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_login_attempts_username ON login_attempts(username);`);
+    await execute(`CREATE INDEX IF NOT EXISTS idx_login_attempts_attempted_at ON login_attempts(attempted_at);`);
+
     // Create auto-update trigger function
     await execute(`
       CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -176,6 +204,16 @@ export async function migrate(): Promise<void> {
         RETURN NEW;
       END;
       $$ language 'plpgsql';
+    `);
+
+    // Create cleanup function for old login attempts
+    await execute(`
+      CREATE OR REPLACE FUNCTION cleanup_old_login_attempts()
+      RETURNS void AS $$
+      BEGIN
+        DELETE FROM login_attempts WHERE attempted_at < NOW() - INTERVAL '24 hours';
+      END;
+      $$ LANGUAGE plpgsql;
     `);
 
     // Create triggers for auto-updating updated_at

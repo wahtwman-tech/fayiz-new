@@ -473,6 +473,7 @@ Allow: /
 
 # Disallow admin and API routes
 Disallow: /admin/
+Disallow: /fayiz-editor/
 Disallow: /api/
 Disallow: /uploads/
 

@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@types/helmet": "^4.0.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/cache": "workspace:*",
     "@workspace/db": "workspace:*",
@@ -18,6 +19,7 @@
     "cors": "^2.8.6",
     "drizzle-orm": "catalog:",
     "express": "^5.2.1",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "pino": "^9.14.0",
