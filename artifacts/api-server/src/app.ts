@@ -19,24 +19,52 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
+        // المصادر الأساسية
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "blob:", "https:"],
-        fontSrc: ["'self'", "data:"],
-        connectSrc: ["'self'"],
+        
+        // Scripts - السماح بـ 'unsafe-inline' للـ SSR
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        
+        // Styles - السماح بـ Google Fonts والـ inline styles
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        
+        // الصور
+        imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+        
+        // الخطوط - السماح بـ Google Fonts
+        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+        
+        // API connections
+        connectSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+        
+        // الميديا (فيديو/صوت) - بدون كاميرا أو ميكروفون
         mediaSrc: ["'self'", "blob:"],
+        
+        // تعطيل الكائنات المضمنة
         objectSrc: ["'none'"],
+        
+        // URI base
         baseUri: ["'self'"],
+        
+        // نموذج الإجراءات
         formAction: ["'self'"],
+        
+        // منع iframe
         frameAncestors: ["'none'"],
         frameSrc: ["'none'"],
         childSrc: ["'none'"],
+        
+        // Workers
         workerSrc: ["'self'", "blob:"],
+        
+        // Manifest
         manifestSrc: ["'self'"],
+        
+        // ترقية HTTP إلى HTTPS
         upgradeInsecureRequests: [],
       },
     },
+    // تعطيل بعض السياسات الصارمة التي قد تسبب مشاكل
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
@@ -47,6 +75,15 @@ app.use(
     },
   }),
 );
+
+// Set Permissions-Policy header manually (تعطيل الكاميرا والميكروفون والموقع)
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  );
+  next();
+});
 
 // Hide server technology headers
 app.disable("x-powered-by");
