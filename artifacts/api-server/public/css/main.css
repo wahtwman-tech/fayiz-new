@@ -7,6 +7,23 @@
 
 /* Note: Google Fonts loaded async in HTML for better performance */
 
+/* Font display swap to prevent layout shift */
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: local('Cairo');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: local('Plus Jakarta Sans');
+}
+
 /* ── Tokens ───────────────────────────────────────────── */
 :root {
   /* Light Backgrounds - High Contrast */
