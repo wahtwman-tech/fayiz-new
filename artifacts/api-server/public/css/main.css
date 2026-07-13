@@ -9,32 +9,32 @@
 
 /* ── Tokens ───────────────────────────────────────────── */
 :root {
-  /* Light Backgrounds */
+  /* Light Backgrounds - High Contrast */
   --bg:          #ffffff;
-  --bg-2:        #f8f9fa;
-  --bg-3:        #e9ecef;
+  --bg-2:        #f5f5f5;
+  --bg-3:        #ebebeb;
   --bg-card:     #ffffff;
-  --bg-glass:    rgba(255, 255, 255, 0.95);
+  --bg-glass:    rgba(255, 255, 255, 0.98);
 
-  /* Desert Gold Accent */
-  --accent:      #d4a574;
-  --accent-lite: #e8c9a0;
-  --accent-glow: rgba(212, 165, 116, 0.25);
-  --accent-dim:  rgba(212, 165, 116, 0.1);
-  --gradient:    linear-gradient(135deg, #d4a574 0%, #c9956c 50%, #b8956a 100%);
-  --gradient-2:  linear-gradient(135deg, rgba(212,165,116,.1) 0%, rgba(201,149,108,.05) 100%);
+  /* Desert Gold Accent - Strong & Clear */
+  --accent:      #b8860b;
+  --accent-lite: #d4a574;
+  --accent-glow: rgba(184, 134, 11, 0.2);
+  --accent-dim:  rgba(184, 134, 11, 0.1);
+  --gradient:    linear-gradient(135deg, #b8860b 0%, #d4a574 100%);
+  --gradient-2:  linear-gradient(135deg, rgba(184,134,11,.08) 0%, rgba(212,165,116,.05) 100%);
 
-  /* High Contrast Text */
+  /* High Contrast Text - Clear & Readable */
   --text:        #1a1a1a;
-  --text-2:      #666666;
-  --text-3:      #999999;
+  --text-2:      #4a4a4a;
+  --text-3:      #777777;
 
-  /* Subtle Borders */
-  --border:      rgba(0, 0, 0, 0.08);
-  --border-2:    rgba(212, 165, 116, 0.3);
+  /* Clear Borders */
+  --border:      rgba(0, 0, 0, 0.12);
+  --border-2:    rgba(184, 134, 11, 0.4);
 
-  --success:     #28a745;
-  --danger:      #dc3545;
+  --success:     #2e7d32;
+  --danger:      #c62828;
 
   --radius-sm:   6px;
   --radius:      12px;
@@ -43,10 +43,10 @@
   --radius-full: 9999px;
 
   /* Soft Shadows */
-  --shadow:      0 2px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.12);
-  --shadow-glow: 0 4px 20px rgba(212, 165, 116, 0.2);
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow:      0 2px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.15);
+  --shadow-glow: 0 4px 20px rgba(184, 134, 11, 0.15);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.08);
 
   --font-ar:     'Cairo', sans-serif;
   --font-en:     'Plus Jakarta Sans', sans-serif;
