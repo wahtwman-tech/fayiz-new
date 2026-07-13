@@ -321,26 +321,48 @@ export function injectMetaTags(html: string, meta: SEOMeta, lang: string = "ar")
   ${meta.structuredData ? `<!-- Structured Data (JSON-LD) -->
   <script type="application/ld+json">${JSON.stringify(meta.structuredData)}</script>` : ""}`;
 
-  // Insert meta tags after <head> or replace existing meta tags
-  const headEndIndex = html.indexOf("</head>");
-  if (headEndIndex === -1) {
-    // If no </head> found, try to find <head ...>
-    const headStartIndex = html.indexOf("<head");
-    if (headStartIndex !== -1) {
-      const afterHeadTag = html.indexOf(">", headStartIndex);
-      return html.slice(0, afterHeadTag + 1) + metaTags + html.slice(afterHeadTag + 1);
-    }
-    return metaTags + html;
-  }
+  // Remove existing SEO meta tags to avoid duplicates
+  let cleanHtml = html;
+  
+  // Remove existing title tags
+  cleanHtml = cleanHtml.replace(/<title>[^<]*<\/title>/gi, "");
+  
+  // Remove existing meta description
+  cleanHtml = cleanHtml.replace(/<meta[^>]*name=["']description["'][^>]*>/gi, "");
+  
+  // Remove existing meta keywords
+  cleanHtml = cleanHtml.replace(/<meta[^>]*name=["']keywords["'][^>]*>/gi, "");
+  
+  // Remove existing robots meta
+  cleanHtml = cleanHtml.replace(/<meta[^>]*name=["']robots["'][^>]*>/gi, "");
+  
+  // Remove existing canonical links
+  cleanHtml = cleanHtml.replace(/<link[^>]*rel=["']canonical["'][^>]*>/gi, "");
+  
+  // Remove existing hreflang links
+  cleanHtml = cleanHtml.replace(/<link[^>]*rel=["']alternate["'][^>]*hreflang=["'][^"']*["'][^>]*>/gi, "");
+  
+  // Remove existing OG meta tags
+  cleanHtml = cleanHtml.replace(/<meta[^>]*property=["']og:[^"']*["'][^>]*>/gi, "");
+  
+  // Remove existing Twitter meta tags
+  cleanHtml = cleanHtml.replace(/<meta[^>]*name=["']twitter:[^"']*["'][^>]*>/gi, "");
+  
+  // Remove existing JSON-LD scripts
+  cleanHtml = cleanHtml.replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[^<]*<\/script>/gi, "");
 
-  // Find position after existing meta tags (after </title> or last </meta>)
-  let insertPosition = headEndIndex;
-  const lastTitleIndex = html.lastIndexOf("</title>", headEndIndex);
-  if (lastTitleIndex !== -1) {
-    insertPosition = lastTitleIndex + 8;
+  // Insert meta tags after <head> tag
+  const headStartIndex = cleanHtml.indexOf("<head");
+  if (headStartIndex === -1) {
+    return metaTags + cleanHtml;
   }
-
-  return html.slice(0, insertPosition) + "\n  " + metaTags + "\n" + html.slice(insertPosition);
+  
+  const afterHeadTag = cleanHtml.indexOf(">", headStartIndex);
+  if (afterHeadTag === -1) {
+    return metaTags + cleanHtml;
+  }
+  
+  return cleanHtml.slice(0, afterHeadTag + 1) + "\n  " + metaTags + "\n" + cleanHtml.slice(afterHeadTag + 1);
 }
 
 // ============================================================================
